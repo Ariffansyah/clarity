@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Clarity
 
-## Getting Started
+Aplikasi web untuk studi kasus **The Trust Trap: Navigating Digital Deception** (MIT-Week 2026). Membantu anak muda
+Indonesia mengenali tipuan digital, berlatih mengambil keputusan, dan tahu langkah yang harus diambil kalau sudah terlanjur.
 
-First, run the development server:
+## Fitur
+
+| Halaman | Pendekatan | Isi |
+| --- | --- | --- |
+| `/` Cek pesan | Recognize | Tempel pesan atau tautan. Bagian yang mencurigakan ditandai stabilo, tiap tanda dijelaskan alasannya, tautan dicek (tautan pendek, akhiran domain murah, nama merek palsu, file `.apk`, IP, punycode), lalu diberi langkah aman. |
+| `/latihan` | Learn | 9 situasi fiktif (7 penipuan, 2 wajar). Pilih tindakan, kartu berbalik menunjukkan umpan balik dan pesan yang sudah ditandai. Skor di akhir. |
+| `/bertindak` | Act | Daftar periksa per kejadian (OTP bocor, sudah transfer, buka tautan palsu, pasang APK, kirim KTP, akun dibajak, ditiru), penyusun pesan peringatan untuk teman, dan saluran lapor resmi. |
+| `/simulasi` | Learn (AI) | Ngobrol dengan penipu fiktif yang diperankan AI (6 persona), maksimal 8 balasan, lalu dinilai: aman, hampir kena, atau kena, beserta alasannya. |
+| `/` Tanya AI | Recognize (AI) | Setelah pemeriksaan berbasis aturan, pengguna bisa meminta pendapat kedua dari AI. Kutipan AI yang tidak ada di pesan dibuang, jadi setiap sorotan menunjuk teks asli. |
+
+## Cara kerja dan batasannya
+
+- Penilaian memakai aturan (regex dan pengecekan alamat) di `lib/analyze.ts`. Setiap aturan punya alasan yang ditampilkan ke pengguna.
+- Hasil **bukan bukti**. "Belum ada pola yang cocok" tidak berarti aman, dan aplikasi menyatakannya di layar.
+- Pemeriksaan berbasis aturan berjalan di browser dan tidak mengirim apa pun.
+- Fitur AI (Tanya AI dan Simulasi) mengirim teks ke [Groq](https://groq.com) **hanya setelah pengguna menekan tombol**, dan ini dijelaskan di layar. Nomor, angka panjang, dan email disamarkan di browser lalu disamarkan ulang di server (`lib/ai.ts`). Clarity tidak menyimpan teks atau percakapan.
+- Tanpa kunci API, fitur AI tampil nonaktif dan fitur lain tetap jalan.
+- Semua contoh dan skenario fiktif. Tidak ada tautan berbahaya yang bisa diklik.
+
+## Menjalankan
+
+Fitur AI butuh kunci dari [console.groq.com](https://console.groq.com). Simpan di `.env.local` (tidak ikut di-commit):
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+GROQ_API_KEY=isi_kuncimu
+# opsional, default openai/gpt-oss-120b
+GROQ_MODEL=openai/gpt-oss-120b
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm install
+pnpm dev     # http://localhost:3000
+pnpm test    # uji aturan pendeteksi
+pnpm build
+```
