@@ -33,19 +33,20 @@ type Face = { sheet: THREE.Object3D; axis: "y" | "z"; face: THREE.Object3D };
 
 type Palette = ReturnType<typeof palette>;
 
+// A repeatable random sequence, so the drawn city, its stars, the dust and the globe's land are the same every visit.
+const seeded = (seed: number) => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
 // The study's own colours: richer than the app's paper and ink, which stay for the pages. Kept here rather than as
 // CSS tokens because they colour only this scene. A sunny study by day; the same room at night in the dark theme.
 const ROOM = {
-  day: { wall: "#f6eedf", panel: "#a9c1b5", trim: "#8a5a3b", wood: "#c48b5a", pad: "#2f4b55", floor: "#d6bfa0", cork: "#c9a273", accent: "#d9714a" },
-  night: { wall: "#1d2230", panel: "#2a3646", trim: "#5c3d28", wood: "#6b4429", pad: "#1b2f35", floor: "#241c18", cork: "#8c6a45", accent: "#c8643e" },
+  day: { wall: "#f6eedf", panel: "#a9c1b5", trim: "#8a5a3b", wood: "#c48b5a", pad: "#2f4b55", floor: "#d6bfa0", cork: "#c9a273", accent: "#d9714a", sea: "#4f9db0" },
+  night: { wall: "#1d2230", panel: "#2a3646", trim: "#5c3d28", wood: "#6b4429", pad: "#1b2f35", floor: "#241c18", cork: "#8c6a45", accent: "#c8643e", sea: "#2b5866" },
 };
 
-// The view out of the window, drawn once: rooftops on a warm afternoon, or the same rooftops at night with their
-// windows lit in the dark theme. Seeded, so the city is the same every visit.
-function drawView(c: Palette) {
-  const cv = document.createElement("canvas");
-  cv.width = 320;
-  cv.height = 240;
+// The view out of the window: rooftops on a warm afternoon with clouds drifting over, or the same rooftops at night
+// with their windows lit and the stars twinkling, in the dark theme. Seeded, so the city is the same every visit;
+// `t` (seconds) moves the sky, and redrawing into the same canvas animates it.
+function drawView(c: Palette, cv = Object.assign(document.createElement("canvas"), { width: 320, height: 240 }), t = 0) {
   const g = cv.getContext("2d")!;
   const css = (col: THREE.Color) => `#${col.getHexString()}`;
   const night = c.paper.getHSL({ h: 0, s: 0, l: 0 }).l < 0.5;
@@ -58,8 +59,29 @@ function drawView(c: Palette) {
   g.beginPath();
   g.arc(236, 64, night ? 16 : 24, 0, Math.PI * 2);
   g.fill();
-  let seed = 11;
-  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const skyRnd = seeded(3);
+  if (night) {
+    g.fillStyle = css(c.ink);
+    for (let i = 0; i < 34; i++) {
+      const [x, y, rate] = [skyRnd() * 320, skyRnd() * 120, 1 + skyRnd() * 2];
+      g.globalAlpha = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * rate + i));
+      g.fillRect(x, y, 2, 2);
+    }
+  } else {
+    g.fillStyle = css(c.card);
+    g.globalAlpha = 0.9;
+    for (const [y, speed, k, start] of [[42, 5, 1, 20], [80, 8, 0.75, 190], [24, 3.5, 0.6, 280]] as const) {
+      const x = ((start + t * speed) % 420) - 60;
+      g.beginPath();
+      g.arc(x, y, 12 * k, 0, Math.PI * 2);
+      g.arc(x + 15 * k, y - 7 * k, 15 * k, 0, Math.PI * 2);
+      g.arc(x + 31 * k, y, 12 * k, 0, Math.PI * 2);
+      g.rect(x, y - 2 * k, 31 * k, 14 * k);
+      g.fill();
+    }
+  }
+  g.globalAlpha = 1;
+  const rnd = seeded(11);
   for (const [top, depth] of [[120, 0.16], [160, 0.3]] as const) {
     for (let x = -12; x < 330; ) {
       const w = 26 + rnd() * 38;
@@ -207,7 +229,8 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   part(room, box(1.75, 0.004, 1.05), rc.pad, 0, 0.002, -0.025); // a deep blotter to the desk's front, so paper and the yellow folder stand out on it
 
   // The window, four panes on a sill, with a view drawn in the theme's own colours.
-  const view = new THREE.CanvasTexture(drawView(c));
+  const viewCanvas = drawView(c);
+  const view = new THREE.CanvasTexture(viewCanvas);
   view.colorSpace = THREE.SRGBColorSpace;
   part(room, box(0.58, 0.44, 0.02), rc.trim, 0.55, 0.41, -1.01);
   const glass = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.38), new THREE.MeshBasicMaterial({ map: view }));
@@ -326,6 +349,143 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     part(hand, box(w, len, 0.004), c.ink, 0, len / 2, 0.012);
   }
   blob(clock, c.danger, [0, 0, 0.016], [0.008, 0.008, 0.004]);
+
+  // Light and life, all of it behind the home page's text on a phone: the window's light falling across the desk
+  // with dust turning in it, string lights on the wall, candles, and a globe that slowly turns.
+  const ambient = group(room);
+  lowWall.push(ambient);
+  const soft = (() => {
+    const cv = Object.assign(document.createElement("canvas"), { width: 64, height: 64 });
+    const g = cv.getContext("2d")!;
+    const fade = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    fade.addColorStop(0, "rgb(255 255 255 / 1)");
+    fade.addColorStop(0.35, "rgb(255 255 255 / 0.45)");
+    fade.addColorStop(1, "rgb(255 255 255 / 0)");
+    g.fillStyle = fade;
+    g.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(cv);
+  })();
+  const halo = (parent: THREE.Object3D, color: THREE.Color, size: number, opacity: number, [x, y, z]: number[]) => {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: soft, color, transparent: true, opacity, depthWrite: false, blending: THREE.AdditiveBlending }));
+    s.scale.setScalar(size);
+    s.position.set(x, y, z);
+    parent.add(s);
+    return s;
+  };
+
+  // Shafts of light: sheets hanging from the top of the window down towards the desk, fading as they fall,
+  // soft at their sides. Warm sun by day, a faint cool moonlight at night.
+  const shaft = (() => {
+    const cv = Object.assign(document.createElement("canvas"), { width: 64, height: 128 });
+    const g = cv.getContext("2d")!;
+    const along = g.createLinearGradient(0, 0, 0, 128);
+    along.addColorStop(0, "rgb(255 255 255 / 1)");
+    along.addColorStop(1, "rgb(255 255 255 / 0)");
+    g.fillStyle = along;
+    g.fillRect(0, 0, 64, 128);
+    g.globalCompositeOperation = "destination-in";
+    const across = g.createLinearGradient(0, 0, 64, 0);
+    for (const [at, a] of [[0, 0], [0.3, 1], [0.7, 1], [1, 0]]) across.addColorStop(at, `rgb(0 0 0 / ${a})`);
+    g.fillStyle = across;
+    g.fillRect(0, 0, 64, 128);
+    return new THREE.CanvasTexture(cv);
+  })();
+  const fall = new THREE.Vector3(-0.32, -0.62, 0.72).normalize();
+  for (const [x0, x1, len] of [[0.31, 0.53, 1.05], [0.57, 0.8, 0.95]] as const) {
+    const a = new THREE.Vector3(x0, 0.6, -0.99);
+    const b = new THREE.Vector3(x1, 0.6, -0.99);
+    const sheet = new THREE.BufferGeometry().setFromPoints([a, b, b.clone().addScaledVector(fall, len), a.clone().addScaledVector(fall, len)]);
+    sheet.setIndex([0, 1, 2, 0, 2, 3]);
+    sheet.setAttribute("uv", new THREE.Float32BufferAttribute([0, 1, 1, 1, 1, 0, 0, 0], 2));
+    const light = new THREE.MeshBasicMaterial({ map: shaft, color: night ? c.ink : c.hl, transparent: true, opacity: night ? 0.07 : 0.32, depthWrite: false, side: THREE.DoubleSide });
+    if (night) light.blending = THREE.AdditiveBlending;
+    ambient.add(new THREE.Mesh(sheet, light));
+  }
+  // Dust turning slowly in the light.
+  const dustRnd = seeded(5);
+  const motes = new Float32Array(60 * 3);
+  for (let i = 0; i < 60; i++) {
+    const p = new THREE.Vector3(0.32 + dustRnd() * 0.46, 0.6, -0.99).addScaledVector(fall, 0.12 + dustRnd() * 0.8);
+    motes.set([p.x, p.y + (dustRnd() - 0.5) * 0.06, p.z], i * 3);
+  }
+  const dust = new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(motes.slice(), 3));
+  ambient.add(new THREE.Points(dust, new THREE.PointsMaterial({ map: soft, color: night ? c.ink : c.card, size: 0.018, transparent: true, opacity: night ? 0.35 : 0.95, depthWrite: false })));
+
+  // String lights swung from the pinboard to the window: unlit by day, glowing at night.
+  const drape = (t: number) => new THREE.Vector3(-0.3 + 0.57 * t, 0.36 + 0.11 * t - 0.07 * Math.sin(Math.PI * t), -1.0);
+  ambient.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 21 }, (_, i) => drape(i / 20))), new THREE.LineBasicMaterial({ color: c.line })));
+  const bulbs: THREE.Sprite[] = [];
+  for (let i = 1; i < 10; i++) {
+    const p = drape(i / 10);
+    blob(ambient, night ? c.hl : tone(c.hl, c.card, 0.55), [p.x, p.y - 0.014, p.z + 0.01], [0.01, 0.013, 0.01]);
+    if (night) bulbs.push(halo(ambient, c.hl, 0.09, 0.6, [p.x, p.y - 0.014, p.z + 0.02]));
+  }
+
+  // A pair of candles on a saucer, lit only at night.
+  const candles = group(ambient);
+  candles.position.set(-0.52, 0, -0.66);
+  part(candles, cyl(0.06, 0.008), rc.trim, 0, 0.004, 0);
+  const flames: THREE.Object3D[] = [];
+  const glows: THREE.Sprite[] = [];
+  for (const [x, z, h] of [[-0.018, 0.006, 0.13], [0.026, -0.012, 0.085]] as const) {
+    part(candles, cyl(0.018, h), tone(c.card, c.warn, 0.12), x, 0.008 + h / 2, z);
+    part(candles, cyl(0.002, 0.012), c.ink, x, 0.014 + h, z);
+    if (night) {
+      flames.push(blob(candles, c.hl, [x, 0.03 + h, z], [0.007, 0.016, 0.007]));
+      glows.push(halo(candles, tone(c.warn, c.hl, 0.5), 0.16, 0.55, [x, 0.032 + h, z]));
+    }
+  }
+
+  // A globe on its stand, turning slowly: blue seas, land in the app's green.
+  const globe = group(ambient);
+  globe.position.set(-0.02, 0, -0.68);
+  part(globe, cyl(0.045, 0.012), rc.trim, 0, 0.006, 0);
+  part(globe, cyl(0.006, 0.05), rc.trim, 0, 0.035, 0);
+  const axis = group(globe);
+  axis.position.y = 0.135;
+  axis.rotation.z = 0.41; // the earth's own tilt
+  part(axis, new THREE.TorusGeometry(0.088, 0.005, 6, 40), rc.trim, 0, 0, 0).rotation.y = 1.15; // seen edge-on enough to read as a meridian
+  const map = (() => {
+    const cv = Object.assign(document.createElement("canvas"), { width: 128, height: 64 });
+    const g = cv.getContext("2d")!;
+    g.fillStyle = `#${rc.sea.getHexString()}`;
+    g.fillRect(0, 0, 128, 64);
+    g.fillStyle = `#${tone(c.good, c.card, 0.25).getHexString()}`;
+    const landRnd = seeded(9);
+    for (let i = 0; i < 9; i++) {
+      g.beginPath();
+      g.ellipse(landRnd() * 128, 10 + landRnd() * 44, 6 + landRnd() * 14, 4 + landRnd() * 9, landRnd() * 3, 0, Math.PI * 2);
+      g.fill();
+    }
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  })();
+  const earth = new THREE.Mesh(new THREE.SphereGeometry(0.075, 28, 18), new THREE.MeshToonMaterial({ map }));
+  const rim = new THREE.Mesh(earth.geometry, hull);
+  rim.scale.setScalar(1.06);
+  earth.add(rim);
+  axis.add(earth);
+
+  let skyShown = -1;
+  // One beat of the room's life, at time t seconds: dust drifts, lights twinkle, flames flicker, the globe turns,
+  // the sky moves on (redrawn ten times a second: plenty for clouds).
+  const stir = (t: number) => {
+    const at = dust.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < 60; i++) {
+      at.setXYZ(i, motes[i * 3] + Math.sin(t * 0.4 + i) * 0.025, motes[i * 3 + 1] + Math.sin(t * 0.3 + i * 2.1) * 0.025, motes[i * 3 + 2] + Math.cos(t * 0.35 + i) * 0.025);
+    }
+    at.needsUpdate = true;
+    bulbs.forEach((b, i) => (b.material.opacity = 0.45 + 0.25 * Math.sin(t * 1.7 + i * 1.3)));
+    flames.forEach((f, i) => (f.scale.y = 0.016 * (1 + 0.15 * Math.sin(t * 13 + i * 2) + 0.08 * Math.sin(t * 7.3 + i))));
+    glows.forEach((g, i) => (g.material.opacity = 0.5 + 0.12 * Math.sin(t * 11 + i * 3)));
+    earth.rotation.y = t * 0.25;
+    if (t - skyShown >= 0.1) {
+      skyShown = t;
+      drawView(c, viewCanvas, t);
+      view.needsUpdate = true;
+    }
+  };
 
   // Always there, whatever page is open: a mug with a handle, and a cup of pencils.
   part(room, cyl(0.05, 0.11), rc.accent, 1.05, 0.055, -0.5);
@@ -640,6 +800,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       if (catClock - catShown >= 1 / 30) {
         catShown = catClock;
         sorot.pose(catClock);
+        stir(catClock);
         dirty = true;
       }
     }
