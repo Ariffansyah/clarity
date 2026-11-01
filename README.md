@@ -24,12 +24,10 @@ Indonesia mengenali tipuan digital, berlatih mengambil keputusan, dan tahu langk
 
 ## Menjalankan
 
-Fitur AI butuh kunci dari [console.groq.com](https://console.groq.com). Simpan di `.env.local` (tidak ikut di-commit):
+Fitur AI butuh kunci dari [console.groq.com](https://console.groq.com). Salin contohnya ke `.env.local` (tidak ikut di-commit), lalu isi `GROQ_API_KEY`:
 
 ```bash
-GROQ_API_KEY=isi_kuncimu
-# opsional, default openai/gpt-oss-120b
-GROQ_MODEL=openai/gpt-oss-120b
+cp .env.example .env.local
 ```
 
 ```bash
