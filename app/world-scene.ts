@@ -16,7 +16,7 @@ const THINGS: { model: string; name: string; href: string; wide: Spot; narrow: S
   { model: "cards", name: "Latihan", href: "/latihan", wide: [-0.2, -0.23], narrow: [0.5, -0.42], lean: [0.26, 0] },
   { model: "tablet", name: "Simulasi", href: "/simulasi", wide: [0.2, -0.24], narrow: [-0.5, -0.45], lean: [-0.06, 0.14] },
   { model: "clipboard", name: "Amankan Akun", href: "/amankan", wide: [0, 0.2], narrow: [0.5, -0.02], lean: [0.26, 0] },
-  { model: "folder", name: "Sudah Terlanjur?", href: "/bertindak", wide: [0.6, -0.03], narrow: [0, 0.36], lean: [0.26, 0] },
+  { model: "folder", name: "Sudah Terlanjur?", href: "/bertindak", wide: [0.66, 0.04], narrow: [0, 0.36], lean: [0.26, 0] },
 ];
 
 const PHONE = { wide: [-0.95, -0.42], narrow: [0, -0.52] } as const;
@@ -31,13 +31,13 @@ const ANCHORS: Record<string, { wide: Spot; narrow: Spot }> = {
   "/latihan": { wide: [-0.2, -0.05], narrow: [0.5, -0.3] },
   "/simulasi": { wide: [0.2, -0.14], narrow: [-0.5, -0.33] },
   "/amankan": { wide: [0, 0.4], narrow: [0.5, 0.1] },
-  "/bertindak": { wide: [0.6, 0.22], narrow: [0, 0.47] },
+  "/bertindak": { wide: [0.66, 0.29], narrow: [0, 0.47] },
 };
 
 // Where a page lies on its thing. `face` is the rectangle the page covers: +y towards the page's top, +z out of it.
 // `sheet` is the part that stretches along `axis` to take the page's shape on this screen.
 // `open` poses the thing from shut (0) to open (1) as you pick it up. It never moves the face, so the page lands
-// where the camera aimed.
+// where the camera aimed, and by halfway it has wiped what is drawn under the face, so the page never fades in over it.
 type Face = { sheet: THREE.Object3D; axis: "y" | "z"; face: THREE.Object3D; open?: (o: number) => void };
 
 type Palette = ReturnType<typeof palette>;
@@ -510,9 +510,11 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       const sheet = group(g);
       shadow(sheet, 0.26, 0.34);
       part(sheet, box(0.26, 0.006, 0.34), c.card, 0, 0.005, 0);
-      part(sheet, box(0.18, 0.003, 0.025), c.hl, -0.01, 0.01, -0.09);
-      part(sheet, box(0.2, 0.003, 0.012), c.line, 0, 0.01, -0.03);
-      part(sheet, box(0.14, 0.003, 0.012), c.line, -0.03, 0.01, 0.01);
+      const marks = [
+        part(sheet, box(0.18, 0.003, 0.025), c.hl, -0.01, 0.01, -0.09),
+        part(sheet, box(0.2, 0.003, 0.012), c.line, 0, 0.01, -0.03),
+        part(sheet, box(0.14, 0.003, 0.012), c.line, -0.03, 0.01, 0.01),
+      ];
       // Beside the paper, not on it: the page would cover it. Opening, it sweeps once over the sheet, then off to the side.
       const glass = group(g);
       const lens = part(glass, new THREE.TorusGeometry(0.045, 0.009, 8, 24), c.ink, 0, 0.009, 0);
@@ -523,6 +525,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
         const over = Math.sin(Math.PI * o);
         glass.position.set(0.19 - 0.26 * over + 0.1 * o, 0.03 * over, 0.08 - 0.12 * over + 0.04 * o);
         glass.rotation.y = 0.5 * o;
+        for (const m of marks) m.visible = o < 0.5;
       };
       open(0);
       return { sheet, axis: "z", face: faceOn(sheet, 0.26, 0.34, 0, 0.008, 0, true), open };
@@ -531,8 +534,8 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       const sheet = group(g);
       const green = c.card.clone().lerp(c.good, 0.3); // the page lying on it is the same sage, a little paler
       shadow(sheet, 0.2, 0.28);
-      // The top card is centred on the stretch, so stretching never slides the page off it. Opening, the cards
-      // under it fan out, as when a deck is spread to deal.
+      // The top card is centred on the stretch, so stretching never slides the page off it. On the way, the cards
+      // under it fan out, as when a deck is spread to deal, and gather back under it before you read.
       const cards = [0, 1, 2, 3].map((i) => part(sheet, slab(0.2, 0.28, 0.012, 0.018), i === 3 ? green : c.card, 0, 0.008 + i * 0.013, (i - 3) * 0.002));
       const fan = [
         [-0.07, -0.32],
@@ -540,8 +543,9 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
         [0.05, 0.2],
       ];
       const open = (o: number) => fan.forEach(([x, turn], i) => {
-        cards[i].position.x = x * o;
-        cards[i].rotation.y = turn * o;
+        const spread = Math.sin(Math.PI * o);
+        cards[i].position.x = x * spread;
+        cards[i].rotation.y = turn * spread;
       });
       return { sheet, axis: "z", face: faceOn(sheet, 0.18, 0.26, 0, 0.053, 0, true), open };
     },
@@ -556,14 +560,19 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       const awake = c.card.clone();
       const asleep = c.card.clone().lerp(new THREE.Color(0x000000), 0.75);
       part(body, cyl(0.004, 0.002), c.line, 0, 0.1755, 0.0065).rotation.x = Math.PI / 2; // the camera dot
-      part(body, box(0.13, 0.03, 0.002), c.paper, -0.045, 0.1, 0.0095);
-      part(body, box(0.13, 0.03, 0.002), c.hl, 0.045, 0.05, 0.0095);
-      part(body, box(0.15, 0.03, 0.002), c.card.clone().lerp(c.warn, 0.5), -0.035, 0, 0.0095);
+      const marks = [
+        part(body, box(0.13, 0.03, 0.002), c.paper, -0.045, 0.1, 0.0095),
+        part(body, box(0.13, 0.03, 0.002), c.hl, 0.045, 0.05, 0.0095),
+        part(body, box(0.15, 0.03, 0.002), c.card.clone().lerp(c.warn, 0.5), -0.035, 0, 0.0095),
+      ];
       // The stand: a lip it rests in at the front, and a leg folded out behind.
       part(g, slab(0.3, 0.07, 0.016, 0.014), c.ink, 0, 0.008, -0.01);
       const leg = part(g, slab(0.16, 0.26, 0.008, 0.012, true), c.ink, 0, 0.12, -0.1);
       leg.rotation.x = 0.42;
-      const open = (o: number) => (screen.material as THREE.MeshToonMaterial).color.lerpColors(asleep, awake, o);
+      const open = (o: number) => {
+        (screen.material as THREE.MeshToonMaterial).color.lerpColors(asleep, awake, o);
+        for (const m of marks) m.visible = o < 0.5;
+      };
       open(0);
       return { sheet: body, axis: "y", face: faceOn(body, 0.255, 0.34, 0, 0, 0.009, false), open };
     },
@@ -574,18 +583,21 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       shadow(sheet, 0.24, 0.34);
       part(sheet, slab(0.24, 0.34, 0.012, 0.02), rc.trim, 0, 0.007, 0);
       part(sheet, box(0.2, 0.004, 0.28), c.card, 0, 0.015, 0);
-      for (let i = 0; i < 3; i++) {
-        part(sheet, box(0.024, 0.003, 0.024), i < 2 ? tone(c.card, c.good, 0.8) : c.card, -0.06, 0.018, -0.06 + i * 0.065);
-        part(sheet, box(0.09, 0.003, 0.01), c.line, 0.025, 0.018, -0.06 + i * 0.065);
-      }
+      const marks = [0, 1, 2].flatMap((i) => [
+        part(sheet, box(0.024, 0.003, 0.024), i < 2 ? tone(c.card, c.good, 0.8) : c.card, -0.06, 0.018, -0.06 + i * 0.065),
+        part(sheet, box(0.09, 0.003, 0.01), c.line, 0.025, 0.018, -0.06 + i * 0.065),
+      ]);
       const lever = group(sheet);
       lever.position.set(0, 0.016, -0.17); // hinged on the board's top edge
       part(lever, slab(0.1, 0.03, 0.016, 0.008), tone(c.card, c.ink, 0.45), 0, 0.008, 0.015);
-      const open = (o: number) => (lever.rotation.x = -1.1 * o);
+      const open = (o: number) => {
+        lever.rotation.x = -1.1 * o;
+        for (const m of marks) m.visible = o < 0.5;
+      };
       return { sheet, axis: "z", face: faceOn(sheet, 0.2, 0.28, 0, 0.018, 0, true), open };
     },
     // Yellow is kept for someone in a hurry: on the desk, this is the one bright thing. Opening, its labelled cover
-    // swings over on the left-hand fold to show the sheet inside, which the page lies on.
+    // swings over on the left-hand fold and lies flat on the desk, showing the sheet inside, which the page lies on.
     folder(g) {
       const sheet = group(g);
       shadow(sheet, 0.34, 0.42);
@@ -596,7 +608,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       cover.position.set(-0.17, 0.014, 0);
       part(cover, slab(0.34, 0.42, 0.006, 0.016), c.hl, 0.17, 0.003, 0);
       part(cover, box(0.26, 0.004, 0.02), c.ink, 0.17, 0.008, -0.1);
-      const open = (o: number) => (cover.rotation.z = 0.8 * Math.PI * o);
+      const open = (o: number) => (cover.rotation.z = Math.PI * o);
       return { sheet, axis: "z", face: faceOn(sheet, 0.3, 0.38, 0, 0.013, 0, true), open };
     },
   };

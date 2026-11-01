@@ -25,15 +25,23 @@ export default function Trainer() {
   const scenario = SCENARIOS[order[Math.min(step, total - 1)]];
   const flipped = picks[step] !== undefined;
 
+  // The card's two sides differ in length: start reading the new one at its top, wherever the old one was scrolled to.
+  function show(heading: React.RefObject<HTMLHeadingElement | null>) {
+    requestAnimationFrame(() => {
+      heading.current?.focus({ preventScroll: true });
+      heading.current?.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    });
+  }
+
   function choose(p: number) {
     setPicks([...picks.slice(0, step), p]);
     setReveal({ s: scenario, p });
-    requestAnimationFrame(() => back.current?.focus({ preventScroll: true }));
+    show(back);
   }
 
   function next() {
     setStep(step + 1);
-    requestAnimationFrame(() => front.current?.focus({ preventScroll: true }));
+    show(front);
   }
 
   function restart() {
@@ -59,7 +67,7 @@ export default function Trainer() {
           : "Tidak apa-apa, justru ini gunanya latihan. Baca lagi tanda-tanda di situasi yang meleset, lalu coba sekali lagi.";
     return (
       <section className="panel enter p-5 @min-[592px]:p-8" aria-labelledby="skor">
-        <h2 id="skor" ref={front} tabIndex={-1} className="text-3xl font-extrabold tracking-tight @min-[592px]:text-4xl">
+        <h2 id="skor" ref={front} tabIndex={-1} className="scroll-mt-8 text-3xl font-extrabold tracking-tight @min-[592px]:text-4xl">
           Kamu tepat di{" "}
           <mark className="hl">
             {score} dari {total}
@@ -113,7 +121,7 @@ export default function Trainer() {
         >
           <section className="panel p-5 @min-[592px]:p-8" inert={flipped} aria-labelledby="situasi">
             <p className="text-sm font-semibold text-muted">Situasinya</p>
-            <h2 id="situasi" ref={front} tabIndex={-1} className="mt-1 text-xl leading-snug font-bold text-balance">
+            <h2 id="situasi" ref={front} tabIndex={-1} className="mt-1 scroll-mt-24 text-xl leading-snug font-bold text-balance">
               {scenario.context}
             </h2>
             <Thread s={scenario} />
@@ -187,7 +195,7 @@ function Answer({
         id="umpan-balik"
         ref={heading}
         tabIndex={-1}
-        className="mt-1 text-3xl font-extrabold tracking-tight"
+        className="mt-1 scroll-mt-16 text-3xl font-extrabold tracking-tight"
         style={{ color: VERDICT[choice.grade].color }}
       >
         {VERDICT[choice.grade].title}

@@ -1005,7 +1005,7 @@ body {
   pointer-events: none;
 }
 :root[data-world] [data-page="latihan"] > .lembar {
-  margin: 12px;
+  margin: 2.4rem 12px 12px; /* below the suit in the corner, so nothing scrolls under it */
 }
 :root[data-world] [data-page="latihan"] .panel {
   border-color: transparent;
@@ -1027,24 +1027,11 @@ body {
   color: var(--muted);
 }
 
-/* The folder: a sheet clipped inside it, with a margin line down the left. */
+/* The folder: the sheet inside it, with a margin line down the left. */
 :root[data-world] [data-page="bertindak"] {
   background:
     linear-gradient(90deg, transparent 1.4rem, color-mix(in srgb, var(--danger) 40%, transparent) 1.4rem calc(1.4rem + 1.5px), transparent 0),
     var(--grain) var(--paper);
-}
-:root[data-world] [data-page="bertindak"]::before {
-  content: "";
-  position: absolute;
-  z-index: 1;
-  top: -1.4rem;
-  left: 2.6rem;
-  width: 1.3rem;
-  height: 4.2rem;
-  rotate: -6deg;
-  background: color-mix(in srgb, var(--ink) 80%, transparent);
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 84'%3E%3Cpath d='M9 26V10a5 5 0 0 1 10 0v58a8 8 0 0 1-16 0V16' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
-  pointer-events: none;
 }
 
 /* The clipboard: the checklist is the sheet itself, under the board's own clip, its groups ruled off. */
