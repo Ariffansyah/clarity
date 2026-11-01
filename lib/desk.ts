@@ -40,13 +40,16 @@ export function pageRect(route: Route, viewW: number, viewH: number) {
 
 export const easeOut = (t: number) => 1 - (1 - t) ** 3;
 
-/** Sorot's idle motion at time t seconds: a slow tail swish, a blink, and now and then a wave. */
-export function catPose(t: number) {
-  const blink = (t % 4.5) / 4.5;
-  const wave = (t % 7) / 7;
+export const RING = 7; // seconds between messages arriving on the desk phone
+
+/** The desk phone at time t seconds. Each RING a new message arrives: the phone buzzes for a moment, its screen lights
+ * up with the notification sliding in, and it goes dark again a few seconds later. */
+export function phonePose(t: number) {
+  const s = t % RING;
   return {
-    tail: Math.sin((t * 2 * Math.PI) / 3) * 0.17,
-    eyes: blink > 0.95 && blink < 0.99 ? 0.1 : 1,
-    arm: wave > 0.8 ? Math.sin(((wave - 0.8) / 0.2) * 4 * Math.PI) * 0.25 : 0,
+    message: Math.floor(t / RING),
+    buzz: s < 0.7 ? Math.sin(s * 90) * 0.035 * (1 - s / 0.7) : 0,
+    lit: s < 4.6 ? Math.min(1, s / 0.15) : Math.max(0, 1 - (s - 4.6) / 0.5),
+    drop: Math.min(1, s / 0.35),
   };
 }

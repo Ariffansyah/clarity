@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { easeOut, pageRect, planeFromRect, type Route } from "@/lib/desk";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { buildCat } from "./world-cat";
+import { buildPhone } from "./world-phone";
 
 const FLY = 1; // seconds for the camera to move between your chair and a page on the desk, the thing opening on the way
 
@@ -19,7 +19,7 @@ const THINGS: { model: string; name: string; href: string; wide: Spot; narrow: S
   { model: "folder", name: "Sudah Terlanjur?", href: "/bertindak", wide: [0.6, -0.03], narrow: [0, 0.36], lean: [0.26, 0] },
 ];
 
-const CAT = { wide: [-0.95, -0.42], narrow: [0, -0.52] } as const;
+const PHONE = { wide: [-0.95, -0.42], narrow: [0, -0.52] } as const;
 const TABLET_TOP = 0.23; // how high the tablet stands on a phone's desk
 
 // Phones look down at the desk this steeply (radians below level), so the standing tablet hides little behind it.
@@ -192,7 +192,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     return f;
   };
 
-  // Round things get the cat's outline: a slightly bigger copy turned inside out, since a sphere has no edges to draw.
+  // Round things get a cartoon outline: a slightly bigger copy turned inside out, since a sphere has no edges to draw.
   const hull = new THREE.MeshBasicMaterial({ color: c.line, side: THREE.BackSide });
   const blob = (parent: THREE.Object3D, color: THREE.Color, [x, y, z]: number[], [sx, sy, sz]: number[], tilt = 0, turn = 0) => {
     const ball = new THREE.SphereGeometry(1, 16, 12);
@@ -273,7 +273,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   }
   board.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([pins[0], pins[1], pins[2], pins[3]]), new THREE.LineBasicMaterial({ color: c.danger })));
 
-  // The lamp's warm pool of light (Sorot sits in it), small enough to stay on the wood, off the desk pad.
+  // The lamp's warm pool of light (the phone stands in it), small enough to stay on the wood, off the desk pad.
   glow(room, c.hl, 0.3, -1.02, -0.45, 0.5);
 
   // Furniture from Kenney's Furniture Kit (CC0, public/models/kenney), drawn like everything else here:
@@ -611,10 +611,11 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   // A page with no thing of its own (not found) lies on the printout.
   const thingFor = (r: Route) => (r === "home" ? undefined : things.find((t) => t.href === `/${r === "lain" ? "periksa" : r}`));
 
-  const sorot = buildCat(c.ink);
-  scene.add(sorot.cat);
-  let catClock = 0;
-  let catShown = -1;
+  const desk = buildPhone(c.line, getComputedStyle(document.body).fontFamily);
+  scene.add(desk.phone);
+  desk.pose(2); // lit with its first message, which is where it stays when motion is reduced
+  let idle = 0;
+  let idleShown = -1;
 
   const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 20);
 
@@ -659,11 +660,11 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       t.g.position.set(across(spot), hover === t.href ? 0.015 : 0, spot[1]);
       t.g.scale.setScalar(narrow ? 0.62 : 1); // a phone has room for far less desk
     }
-    const spot = narrow ? CAT.narrow : CAT.wide;
+    const spot = narrow ? PHONE.narrow : PHONE.wide;
     const x = across(spot);
-    sorot.cat.position.set(x, 0.008, spot[1]); // just above the desk, so the outline underneath does not cut into it
-    sorot.cat.rotation.y = Math.atan2(eye.x - x, eye.z - spot[1]); // always sits facing you
-    sorot.cat.scale.setScalar(narrow ? 0.55 : 0.85);
+    desk.phone.position.set(x, 0.002, spot[1]); // just above the desk, so its outline underneath does not cut into it
+    desk.phone.rotation.y = Math.atan2(eye.x - x, eye.z - spot[1]); // its screen always faces you
+    desk.phone.scale.setScalar(narrow ? 1 : 1.45);
     for (const o of lowWall) o.visible = !narrow;
     dirty = true;
   };
@@ -874,7 +875,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   let last = performance.now();
   let raf = requestAnimationFrame(function tick(now) {
     raf = requestAnimationFrame(tick);
-    const dt = Math.min((now - last) / 1000, 0.1);
+    const dt = Math.max(0, Math.min((now - last) / 1000, 0.1)); // the first frame can be stamped before the start
     last = now;
     if (flyT < 1) {
       flyT = Math.min(1, flyT + dt / FLY);
@@ -888,13 +889,13 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       lookY += (ty - lookY) * k;
       dirty = true;
     }
-    // Sorot keeps the desk redrawing, so cap it at 30 fps.
+    // The phone and the room's small motions keep the desk redrawing, so cap them at 30 fps.
     if (!reduced.matches) {
-      catClock += dt;
-      if (catClock - catShown >= 1 / 30) {
-        catShown = catClock;
-        sorot.pose(catClock);
-        stir(catClock);
+      idle += dt;
+      if (idle - idleShown >= 1 / 30) {
+        idleShown = idle;
+        desk.pose(idle);
+        stir(idle);
         dirty = true;
       }
     }

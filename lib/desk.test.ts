@@ -1,12 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { catPose, easeOut, pageRect, planeFromRect, routeOf } from "./desk.ts";
+import { easeOut, pageRect, phonePose, planeFromRect, RING, routeOf } from "./desk.ts";
 
-test("Sorot rests between blinks and waves, then does each briefly", () => {
-  assert.deepEqual([catPose(0).eyes, catPose(0).arm], [1, 0]);
-  assert.equal(catPose(4.5 * 0.97).eyes, 0.1);
-  assert.notEqual(catPose(7 * 0.85).arm, 0);
-  assert.equal(catPose(7 * 0.5).arm, 0);
+test("the desk phone buzzes as a message arrives, shows it, then goes dark until the next", () => {
+  assert.notEqual(phonePose(0.2).buzz, 0);
+  assert.deepEqual([phonePose(3).buzz, phonePose(3).lit, phonePose(3).drop], [0, 1, 1]);
+  assert.equal(phonePose(6).lit, 0);
+  assert.equal(phonePose(RING + 1).message, 1);
 });
 
 test("every page maps to its desk, nested paths included", () => {
