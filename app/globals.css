@@ -758,6 +758,27 @@ body {
   transition: box-shadow 0.16s, background-color 0.2s;
   pointer-events: auto;
 }
+/* Phones: two columns of labels share the width; the one alone in the middle, at the front, may take more. */
+@media (max-width: 767px) {
+  :root[data-world] .meja-link {
+    max-width: 46vw;
+    padding-inline: 0.5rem;
+  }
+  :root[data-world] .meja-link[data-anchor="/bertindak"] {
+    max-width: 80vw;
+  }
+}
+/* Short phones show just the names, so labels keep clear of the things beside them. Screen readers still hear all. */
+@media (max-width: 767px) and (max-height: 720px) {
+  :root[data-world] .meja-link span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
 
 
 /* ---------- Tape: cards pinned to the page like a scrapbook ---------- */
@@ -1156,6 +1177,10 @@ body {
   pointer-events: none;
 }
 
+/* The clipboard: a clean checklist sheet, under the board's own clip. */
+:root[data-world] [data-page="amankan"] {
+  background: var(--grain) var(--card);
+}
 
 @media (prefers-reduced-motion: reduce) {
   *,

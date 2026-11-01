@@ -4,6 +4,7 @@ const FILES = [
   { href: "/periksa", title: "Cek Pesan", sub: "Ragu sama pesan?" },
   { href: "/latihan", title: "Latihan", sub: "Percaya atau curiga?" },
   { href: "/simulasi", title: "Simulasi", sub: "Ngobrol dengan penipu" },
+  { href: "/amankan", title: "Amankan Akun", sub: "Kunci sebelum dicoba" },
   { href: "/bertindak", title: "Sudah Terlanjur?", sub: "Langkah paling mendesak" },
 ];
 

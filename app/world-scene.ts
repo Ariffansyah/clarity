@@ -8,23 +8,30 @@ const FLY = 0.8; // seconds for the camera to move between your chair and a page
 type Spot = [x: number, z: number];
 
 // Every page is a thing on the desk. Click one and you lean in to read it right where it lies.
-// `narrow` keeps things in the part of the desk a phone shows. `lean` is how far from square on you see it while
+// `narrow` is where it lies on a phone: across the screen (-1 to 1, so the two columns of labels never meet on any
+// phone) and depth on the desk, the standing tablet at the back so it hides no label. `lean` is how far from square on you see it while
 // reading, in radians: towards you over a page lying flat, a little round the side of the tablet.
 const THINGS: { model: string; name: string; href: string; wide: Spot; narrow: Spot; lean: [pitch: number, yaw: number] }[] = [
-  { model: "printout", name: "Cek Pesan", href: "/periksa", wide: [-0.6, -0.03], narrow: [-0.17, -0.42], lean: [0.26, 0] },
-  { model: "cards", name: "Latihan", href: "/latihan", wide: [-0.2, -0.23], narrow: [0.17, -0.42], lean: [0.26, 0] },
-  { model: "tablet", name: "Simulasi", href: "/simulasi", wide: [0.2, -0.24], narrow: [-0.15, 0.2], lean: [-0.06, 0.14] },
-  { model: "folder", name: "Sudah Terlanjur?", href: "/bertindak", wide: [0.6, -0.03], narrow: [0.15, 0.2], lean: [0.26, 0] },
+  { model: "printout", name: "Cek Pesan", href: "/periksa", wide: [-0.6, -0.03], narrow: [-0.5, -0.02], lean: [0.26, 0] },
+  { model: "cards", name: "Latihan", href: "/latihan", wide: [-0.2, -0.23], narrow: [0.5, -0.42], lean: [0.26, 0] },
+  { model: "tablet", name: "Simulasi", href: "/simulasi", wide: [0.2, -0.24], narrow: [-0.5, -0.45], lean: [-0.06, 0.14] },
+  { model: "clipboard", name: "Amankan Akun", href: "/amankan", wide: [0, 0.2], narrow: [0.5, -0.02], lean: [0.26, 0] },
+  { model: "folder", name: "Sudah Terlanjur?", href: "/bertindak", wide: [0.6, -0.03], narrow: [0, 0.36], lean: [0.26, 0] },
 ];
 
-const CAT = { wide: [-0.95, -0.42], narrow: [0, -0.5] } as const;
+const CAT = { wide: [-0.95, -0.42], narrow: [0, -0.52] } as const;
+const TABLET_TOP = 0.23; // how high the tablet stands on a phone's desk
+
+// Phones look down at the desk this steeply (radians below level), so the standing tablet hides little behind it.
+const PITCH = 0.95;
 
 // Where the home page's HTML labels sit on the desk.
 const ANCHORS: Record<string, { wide: Spot; narrow: Spot }> = {
-  "/periksa": { wide: [-0.6, 0.18], narrow: [-0.17, -0.25] },
-  "/latihan": { wide: [-0.2, -0.05], narrow: [0.17, -0.25] },
-  "/simulasi": { wide: [0.2, -0.14], narrow: [-0.13, 0.38] },
-  "/bertindak": { wide: [0.6, 0.22], narrow: [0.13, 0.38] },
+  "/periksa": { wide: [-0.6, 0.18], narrow: [-0.5, 0.1] },
+  "/latihan": { wide: [-0.2, -0.05], narrow: [0.5, -0.3] },
+  "/simulasi": { wide: [0.2, -0.14], narrow: [-0.5, -0.33] },
+  "/amankan": { wide: [0, 0.4], narrow: [0.5, 0.1] },
+  "/bertindak": { wide: [0.6, 0.22], narrow: [0, 0.47] },
 };
 
 // Where a page lies on its thing. `face` is the rectangle the page covers: +y towards the page's top, +z out of it.
@@ -536,6 +543,20 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       leg.rotation.x = 0.42;
       return { sheet: body, axis: "y", face: faceOn(body, 0.255, 0.34, 0, 0, 0.009, false) };
     },
+    // A clipboard: a checklist under a metal clip, two of its boxes already ticked. The clip sits above the paper,
+    // so the open page, which covers the paper, never hides it.
+    clipboard(g) {
+      const sheet = group(g);
+      shadow(sheet, 0.24, 0.34);
+      part(sheet, slab(0.24, 0.34, 0.012, 0.02), rc.trim, 0, 0.007, 0);
+      part(sheet, box(0.2, 0.004, 0.28), c.card, 0, 0.015, 0);
+      for (let i = 0; i < 3; i++) {
+        part(sheet, box(0.024, 0.003, 0.024), i < 2 ? tone(c.card, c.good, 0.8) : c.card, -0.06, 0.018, -0.06 + i * 0.065);
+        part(sheet, box(0.09, 0.003, 0.01), c.line, 0.025, 0.018, -0.06 + i * 0.065);
+      }
+      part(sheet, slab(0.1, 0.03, 0.016, 0.008), tone(c.card, c.ink, 0.45), 0, 0.024, -0.155); // the clip
+      return { sheet, axis: "z", face: faceOn(sheet, 0.2, 0.28, 0, 0.018, 0, true) };
+    },
     // Yellow is kept for someone in a hurry: on the desk, this is the one bright thing.
     folder(g) {
       const sheet = group(g);
@@ -573,6 +594,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   let lookY = 0;
   let hover: string | null = null;
   let spread = 1;
+  let headFoot = 0.3; // how far down a phone's screen the home heading ends, as last measured
   let rect = { left: 0, top: 0, width: 1, height: 1 };
   let flyT = 1;
   let shown = "";
@@ -593,16 +615,21 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   const pxToFace = new THREE.Matrix4();
   const toScreen = new THREE.Matrix4();
 
+  // A spot's x on the desk. On phones its first number is a place across the screen: the x seen there from your chair.
+  const across = ([x, z]: readonly number[]) =>
+    narrow ? x * Math.tan((camera.fov * Math.PI) / 360) * camera.aspect * (Math.sin(PITCH) * eye.y - Math.cos(PITCH) * (z - eye.z)) : x * spread;
+
   // Things where they lie on the desk, the one under the pointer lifted a little.
   const layout = () => {
     for (const t of things) {
-      const [x, z] = narrow ? t.narrow : t.wide;
-      t.g.position.set(x * spread, hover === t.href ? 0.015 : 0, z);
+      const spot = narrow ? t.narrow : t.wide;
+      t.g.position.set(across(spot), hover === t.href ? 0.015 : 0, spot[1]);
       t.g.scale.setScalar(narrow ? 0.62 : 1); // a phone has room for far less desk
     }
-    const [x, z] = narrow ? CAT.narrow : CAT.wide;
-    sorot.cat.position.set(x * spread, 0.008, z); // just above the desk, so the outline underneath does not cut into it
-    sorot.cat.rotation.y = Math.atan2(eye.x - x * spread, eye.z - z); // always sits facing you
+    const spot = narrow ? CAT.narrow : CAT.wide;
+    const x = across(spot);
+    sorot.cat.position.set(x, 0.008, spot[1]); // just above the desk, so the outline underneath does not cut into it
+    sorot.cat.rotation.y = Math.atan2(eye.x - x, eye.z - spot[1]); // always sits facing you
     sorot.cat.scale.setScalar(narrow ? 0.55 : 0.85);
     for (const o of lowWall) o.visible = !narrow;
     dirty = true;
@@ -649,10 +676,32 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     camera.fov = narrow ? 50 : 45;
     camera.updateProjectionMatrix();
     spread = narrow ? 1 : Math.min(1, camera.aspect / 1.6); // squarer windows pull things in from the edges
-    // Seated: eye above the desk, looking down at it.
-    eye.set(0, narrow ? 0.95 : 0.72, narrow ? 1.2 : 1.3); // on wide screens, back enough to see the study round the desk
-    camera.position.copy(eye);
-    camera.lookAt(0, narrow ? -0.16 : 0.02, -0.33);
+    // Seated: eye above the desk, looking down at it, back enough on wide screens to see the study round the desk.
+    if (narrow) {
+      // A phone's desk fills the screen under the heading, whatever the phone. Looking down at PITCH, two points fix
+      // where the eye is: the tablet's top just under the heading, and the front label clear of the screen's foot.
+      const head = route === "home" ? document.querySelector("#isi > p") : null; // home's intro, under its heading
+      if (head) headFoot = (head.getBoundingClientRect().bottom + 16) / h;
+      const tan = Math.tan((camera.fov * Math.PI) / 360);
+      const [sn, cs] = [Math.sin(PITCH), Math.cos(PITCH)];
+      // The eye sees height y at depth z `px` down the screen anywhere on this line: a·eye.y + b·eye.z = c.
+      const line = (y: number, z: number, px: number) => {
+        const s = (1 - (2 * px) / h) * tan;
+        const [a, b] = [cs + s * sn, s * cs - sn];
+        return [a, b, a * y + b * z];
+      };
+      const tablet = THINGS.find((t) => t.model === "tablet")!;
+      const [a1, b1, c1] = line(TABLET_TOP, tablet.narrow[1] - 0.03, headFoot * h);
+      const [a2, b2, c2] = line(0, ANCHORS["/bertindak"].narrow[1], h - 76);
+      const det = a1 * b2 - a2 * b1;
+      eye.set(0, (c1 * b2 - c2 * b1) / det, (a1 * c2 - a2 * c1) / det);
+      camera.position.copy(eye);
+      camera.rotation.set(-PITCH, 0, 0);
+    } else {
+      eye.set(0, 0.72, 1.3);
+      camera.position.copy(eye);
+      camera.lookAt(0, 0.02, -0.33);
+    }
     lookHome.copy(camera.quaternion);
     rect = pageRect(route, w, h);
     layout();
@@ -708,8 +757,8 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       document.querySelectorAll<HTMLElement>("[data-anchor]").forEach((el) => {
         const a = ANCHORS[el.dataset.anchor!];
         if (!a) return;
-        const [x, z] = narrow ? a.narrow : a.wide;
-        v.set(x * spread, 0, z).project(camera);
+        const spot = narrow ? a.narrow : a.wide;
+        v.set(across(spot), 0, spot[1]).project(camera);
         el.style.setProperty("--x", `${((v.x + 1) / 2) * w}px`);
         el.style.setProperty("--y", `${((1 - v.y) / 2) * h}px`);
       });

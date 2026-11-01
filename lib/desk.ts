@@ -1,11 +1,11 @@
 // The desk world's rules. No Three.js here, so they can be tested in plain Node.
 
-export type Route = "home" | "periksa" | "latihan" | "simulasi" | "bertindak" | "lain";
+export type Route = "home" | "periksa" | "latihan" | "simulasi" | "amankan" | "bertindak" | "lain";
 
 export function routeOf(path: string): Route {
   if (path === "/") return "home";
   const first = path.split("/")[1];
-  return first === "periksa" || first === "latihan" || first === "simulasi" || first === "bertindak" ? first : "lain";
+  return first === "periksa" || first === "latihan" || first === "simulasi" || first === "amankan" || first === "bertindak" ? first : "lain";
 }
 
 /** Where a page's on-screen box sits on a camera-facing plane `dist` in front of the camera. */

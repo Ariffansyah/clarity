@@ -14,7 +14,7 @@ export default function Latihan() {
       </h1>
       <p className="hand mt-4 text-2xl">semua nama, nomor, dan alamat di sini fiktif</p>
       <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted">
-        Sembilan situasi yang mirip kejadian sehari-hari. Pilih tindakanmu, lalu kartunya berbalik dan menunjukkan apa
+        Sebelas situasi yang mirip kejadian sehari-hari. Pilih tindakanmu, lalu kartunya berbalik dan menunjukkan apa
         yang seharusnya kamu perhatikan.
       </p>
       <div className="mt-10">

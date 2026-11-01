@@ -13,6 +13,7 @@ test("every page maps to its desk, nested paths included", () => {
   assert.equal(routeOf("/"), "home");
   assert.equal(routeOf("/periksa"), "periksa");
   assert.equal(routeOf("/bertindak/apa"), "bertindak");
+  assert.equal(routeOf("/amankan"), "amankan");
   assert.equal(routeOf("/tidak-ada"), "lain");
   assert.equal(routeOf("/periksa-palsu"), "lain");
 });
