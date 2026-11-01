@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { catPose, easeOut, planeFromRect, routeOf } from "./desk.ts";
+import { catPose, easeOut, pageRect, planeFromRect, routeOf } from "./desk.ts";
 
 test("Sorot rests between blinks and waves, then does each briefly", () => {
   assert.deepEqual([catPose(0).eyes, catPose(0).arm], [1, 0]);
@@ -34,4 +34,16 @@ test("a box in the top right lands up and to the right", () => {
 test("easing starts and ends in the right place", () => {
   assert.equal(easeOut(0), 0);
   assert.equal(easeOut(1), 1);
+});
+
+test("an open page fits on screen below the way back, and the chat stays tablet-shaped", () => {
+  for (const [w, h] of [[390, 844], [1440, 900], [820, 1180], [1024, 600]]) {
+    for (const route of ["periksa", "simulasi"] as const) {
+      const r = pageRect(route, w, h);
+      assert.ok(r.left >= 0 && r.top >= 64 && r.left + r.width <= w && r.top + r.height <= h, `${route} ${w}x${h}`);
+    }
+  }
+  const tablet = pageRect("simulasi", 1440, 900);
+  assert.ok(Math.abs(tablet.height / tablet.width - 4 / 3) < 0.01, "3:4 on a desktop");
+  assert.ok(pageRect("periksa", 1440, 900).width > tablet.width);
 });

@@ -114,6 +114,7 @@ export default function Sim({ ready }: { ready: boolean }) {
               type="button"
               disabled={!ready || busy}
               aria-pressed={persona === x.id}
+              data-initial={x.sender.replace(/^@/, "").charAt(0).toUpperCase()}
               onClick={() => start(x.id)}
               className="choice aria-pressed:bg-ink aria-pressed:text-paper aria-pressed:shadow-none disabled:cursor-not-allowed disabled:opacity-60"
             >

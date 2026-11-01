@@ -1,43 +1,23 @@
 import * as THREE from "three";
-import { easeOut, planeFromRect, type Route } from "@/lib/desk";
+import { easeOut, pageRect, planeFromRect, type Route } from "@/lib/desk";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { buildCat } from "./world-cat";
 
-const SWITCH = 0.55; // seconds for one desk's things to leave and the next ones to arrive
-const FRAME_DIST = 1;
-const FRAME_PAD = 10; // px of frame showing around the page
+const FLY = 0.8; // seconds for the camera to move between your chair and a page on the desk
 
 type Spot = [x: number, z: number];
-type Prop = { model: string; wide: Spot; narrow: Spot; href?: string };
 
-// What lies on the desk for each page. `narrow` keeps things in the strip a phone shows above the page.
-const DESKS: Record<Route, Prop[]> = {
-  home: [
-    { model: "printout", href: "/periksa", wide: [-0.6, -0.15], narrow: [-0.17, -0.42] },
-    { model: "cards", href: "/latihan", wide: [-0.2, -0.35], narrow: [0.17, -0.42] },
-    { model: "phone", href: "/simulasi", wide: [0.2, -0.35], narrow: [-0.15, 0.2] },
-    { model: "folder", href: "/bertindak", wide: [0.6, -0.15], narrow: [0.15, 0.2] },
-  ],
-  periksa: [
-    { model: "paperStack", wide: [-0.86, -0.2], narrow: [-0.26, -0.58] },
-    { model: "magnifier", wide: [0.86, -0.2], narrow: [0.26, -0.58] },
-  ],
-  latihan: [
-    { model: "cards", wide: [-0.86, -0.2], narrow: [-0.26, -0.58] },
-    { model: "redCards", wide: [0.86, -0.2], narrow: [0.26, -0.58] },
-  ],
-  simulasi: [
-    { model: "phone", wide: [-0.86, -0.3], narrow: [-0.26, -0.58] },
-    { model: "chatNotes", wide: [0.86, -0.2], narrow: [0.26, -0.58] },
-  ],
-  bertindak: [
-    { model: "folder", wide: [-0.86, -0.2], narrow: [-0.26, -0.58] },
-    { model: "pen", wide: [0.86, -0.2], narrow: [0.26, -0.58] },
-  ],
-  lain: [],
-};
+// Every page is a thing on the desk. Click one and you lean in to read it right where it lies.
+// `narrow` keeps things in the part of the desk a phone shows. `lean` is how far from square on you see it while
+// reading, in radians: towards you over a page lying flat, a little round the side of the tablet.
+const THINGS: { model: string; name: string; href: string; wide: Spot; narrow: Spot; lean: [pitch: number, yaw: number] }[] = [
+  { model: "printout", name: "Cek Pesan", href: "/periksa", wide: [-0.6, -0.15], narrow: [-0.17, -0.42], lean: [0.26, 0] },
+  { model: "cards", name: "Latihan", href: "/latihan", wide: [-0.2, -0.35], narrow: [0.17, -0.42], lean: [0.26, 0] },
+  { model: "tablet", name: "Simulasi", href: "/simulasi", wide: [0.2, -0.36], narrow: [-0.15, 0.2], lean: [-0.06, 0.14] },
+  { model: "folder", name: "Sudah Terlanjur?", href: "/bertindak", wide: [0.6, -0.15], narrow: [0.15, 0.2], lean: [0.26, 0] },
+];
 
-// Sorot stays on the desk on every page, moving aside once a sheet is up.
-const CAT = { home: { wide: [-0.95, -0.42], narrow: [0, -0.5] }, page: { wide: [-1.02, -0.62], narrow: [0, -0.62] } } as const;
+const CAT = { wide: [-0.95, -0.42], narrow: [0, -0.5] } as const;
 
 // Where the home page's HTML labels sit on the desk.
 const ANCHORS: Record<string, { wide: Spot; narrow: Spot }> = {
@@ -46,6 +26,59 @@ const ANCHORS: Record<string, { wide: Spot; narrow: Spot }> = {
   "/simulasi": { wide: [0.2, -0.26], narrow: [-0.13, 0.38] },
   "/bertindak": { wide: [0.6, 0.1], narrow: [0.13, 0.38] },
 };
+
+// Where a page lies on its thing. `face` is the rectangle the page covers: +y towards the page's top, +z out of it.
+// `sheet` is the part that stretches along `axis` to take the page's shape on this screen.
+type Face = { sheet: THREE.Object3D; axis: "y" | "z"; face: THREE.Object3D };
+
+type Palette = ReturnType<typeof palette>;
+
+// The study's own colours: richer than the app's paper and ink, which stay for the pages. Kept here rather than as
+// CSS tokens because they colour only this scene. A sunny study by day; the same room at night in the dark theme.
+const ROOM = {
+  day: { wall: "#f6eedf", panel: "#a9c1b5", trim: "#8a5a3b", wood: "#c48b5a", pad: "#2f4b55", floor: "#d6bfa0", cork: "#c9a273", accent: "#d9714a" },
+  night: { wall: "#1d2230", panel: "#2a3646", trim: "#5c3d28", wood: "#6b4429", pad: "#1b2f35", floor: "#241c18", cork: "#8c6a45", accent: "#c8643e" },
+};
+
+// The view out of the window, drawn once: rooftops on a warm afternoon, or the same rooftops at night with their
+// windows lit in the dark theme. Seeded, so the city is the same every visit.
+function drawView(c: Palette) {
+  const cv = document.createElement("canvas");
+  cv.width = 320;
+  cv.height = 240;
+  const g = cv.getContext("2d")!;
+  const css = (col: THREE.Color) => `#${col.getHexString()}`;
+  const night = c.paper.getHSL({ h: 0, s: 0, l: 0 }).l < 0.5;
+  const sky = g.createLinearGradient(0, 0, 0, 240);
+  sky.addColorStop(0, css(night ? c.paper : c.card.clone().lerp(c.hl, 0.4)));
+  sky.addColorStop(1, css(night ? c.paper.clone().lerp(c.good, 0.3) : c.card.clone().lerp(c.warn, 0.22)));
+  g.fillStyle = sky;
+  g.fillRect(0, 0, 320, 240);
+  g.fillStyle = css(night ? c.ink : c.hl);
+  g.beginPath();
+  g.arc(236, 64, night ? 16 : 24, 0, Math.PI * 2);
+  g.fill();
+  let seed = 11;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (const [top, depth] of [[120, 0.16], [160, 0.3]] as const) {
+    for (let x = -12; x < 330; ) {
+      const w = 26 + rnd() * 38;
+      const y = top + rnd() * 45;
+      g.fillStyle = css(c.paper.clone().lerp(c.ink, night ? depth * 0.55 : depth));
+      g.fillRect(x, y, w, 240 - y);
+      for (let wy = y + 8; wy < 232; wy += 13) {
+        for (let wx = x + 6; wx < x + w - 8; wx += 11) {
+          if (night ? rnd() < 0.35 : rnd() < 0.5) {
+            g.fillStyle = night ? css(c.hl) : css(c.paper.clone().lerp(c.ink, depth + 0.12));
+            g.fillRect(wx, wy, 5, 6);
+          }
+        }
+      }
+      x += w + 3;
+    }
+  }
+  return cv;
+}
 
 function palette() {
   const css = getComputedStyle(document.documentElement);
@@ -66,7 +99,8 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   const c = palette();
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  const wood = c.card.clone().lerp(c.warn, 0.22);
+  const night = c.paper.getHSL({ h: 0, s: 0, l: 0 }).l < 0.5;
+  const rc = Object.fromEntries(Object.entries(night ? ROOM.night : ROOM.day).map(([k, v]) => [k, new THREE.Color(v)])) as Record<keyof typeof ROOM.day, THREE.Color>;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
 
   const scene = new THREE.Scene();
@@ -89,96 +123,283 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   };
   const box = (w: number, h: number, d: number) => new THREE.BoxGeometry(w, h, d);
   const cyl = (r: number, h: number) => new THREE.CylinderGeometry(r, r, h, 18);
+  const group = (parent: THREE.Object3D) => {
+    const g = new THREE.Group();
+    parent.add(g);
+    return g;
+  };
+  // The app's hard offset shadow, as under its buttons: a dark patch on the desk, down and right of a thing lying on it.
+  const shadow = (parent: THREE.Object3D, w: number, d: number) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18, depthWrite: false }));
+    m.rotation.x = -Math.PI / 2;
+    m.position.set(0.012, 0.0046, 0.012); // just above the desk pad
+    parent.add(m);
+  };
+  // A flat thing with rounded corners: w by h, t thick, centred like a box. Lying on the desk unless upright.
+  const slab = (w: number, h: number, t: number, r: number, upright = false) => {
+    const s = new THREE.Shape()
+      .moveTo(-w / 2 + r, -h / 2)
+      .lineTo(w / 2 - r, -h / 2)
+      .quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r)
+      .lineTo(w / 2, h / 2 - r)
+      .quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2)
+      .lineTo(-w / 2 + r, h / 2)
+      .quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r)
+      .lineTo(-w / 2, -h / 2 + r)
+      .quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r, -h / 2);
+    const g = new THREE.ExtrudeGeometry(s, { depth: t, bevelEnabled: false, curveSegments: 5 });
+    g.translate(0, 0, -t / 2);
+    if (!upright) g.rotateX(-Math.PI / 2);
+    return g;
+  };
+  const faceOn = (parent: THREE.Object3D, w: number, h: number, x: number, y: number, z: number, flat: boolean) => {
+    const f = new THREE.Object3D();
+    f.position.set(x, y, z);
+    if (flat) f.rotation.x = -Math.PI / 2; // lying on the desk, its top edge away from you
+    f.scale.set(w, h, 1);
+    parent.add(f);
+    return f;
+  };
 
-  // The fixed part of the world: the desk you sit at, and the wall in front of you. Desk top is y = 0.
+  // Round things get the cat's outline: a slightly bigger copy turned inside out, since a sphere has no edges to draw.
+  const hull = new THREE.MeshBasicMaterial({ color: c.line, side: THREE.BackSide });
+  const blob = (parent: THREE.Object3D, color: THREE.Color, [x, y, z]: number[], [sx, sy, sz]: number[], tilt = 0, turn = 0) => {
+    const ball = new THREE.SphereGeometry(1, 16, 12);
+    const m = new THREE.Mesh(ball, new THREE.MeshToonMaterial({ color }));
+    m.position.set(x, y, z);
+    m.scale.set(sx, sy, sz);
+    m.rotation.set(0, turn, tilt);
+    const outline = new THREE.Mesh(ball, hull);
+    outline.scale.set(1.12, 1.06, 1.12);
+    m.add(outline);
+    parent.add(m);
+    return m;
+  };
+  // A soft patch of colour lying on a surface: the lamp's light on the desk.
+  const glow = (parent: THREE.Object3D, color: THREE.Color, r: number, x: number, z: number, strength: number) => {
+    const cv = document.createElement("canvas");
+    cv.width = cv.height = 128;
+    const g = cv.getContext("2d")!;
+    const fade = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    fade.addColorStop(0, `rgb(255 255 255 / ${strength})`);
+    fade.addColorStop(1, "rgb(255 255 255 / 0)");
+    g.fillStyle = fade;
+    g.fillRect(0, 0, 128, 128);
+    const m = new THREE.Mesh(
+      new THREE.PlaneGeometry(r * 2, r * 2),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv), color, transparent: true, depthWrite: false }),
+    );
+    m.rotation.x = -Math.PI / 2;
+    m.position.set(x, 0.0048, z);
+    parent.add(m);
+  };
+
+  // The fixed part of the world: the desk you sit at and the corner of a study around it. Desk top is y = 0.
+  // Nothing hangs high on the left of the wall: the home page's heading sits over that part.
   const room = new THREE.Group();
   scene.add(room);
-  part(room, box(3.6, 0.06, 1.3), wood, 0, -0.03, -0.1);
-  part(room, box(8, 4, 0.05), c.card, 0, 1.2, -1.05);
-  part(room, box(8, 0.05, 6), c.paper, 0, -0.75, 0);
-  // A desk mat, a window, and the lamp and mug that are always there, whatever page you are on.
-  part(room, box(1.75, 0.004, 0.8), c.paper, 0, 0.002, -0.15);
-  part(room, box(0.56, 0.42, 0.02), c.ink, 0.98, 0.33, -1.01);
-  part(room, box(0.5, 0.36, 0.02), c.paper.clone().lerp(c.good, 0.18), 0.98, 0.33, -1);
-  part(room, box(0.012, 0.36, 0.02), c.ink, 0.98, 0.33, -0.99);
-  part(room, cyl(0.08, 0.02), c.ink, -1.22, 0.01, -0.6);
-  part(room, cyl(0.012, 0.34), c.ink, -1.22, 0.17, -0.6);
-  part(room, new THREE.ConeGeometry(0.11, 0.11, 18), c.ink, -1.22, 0.36, -0.6);
-  part(room, cyl(0.05, 0.11), c.warn, 1.05, 0.055, -0.5);
+  const tone = (a: THREE.Color, b: THREE.Color, t: number) => a.clone().lerp(b, t);
+  const deskTop = part(room, box(3.6, 0.06, 1.3), rc.wood, 0, -0.03, -0.1); // stands in until the real desks load
+  part(room, box(8, 4, 0.05), rc.wall, 0, 1.2, -1.05);
+  // A darker panel low on the wall. Phones see the wall only behind the home page's text, so there it stays plain.
+  const lowWall: THREE.Object3D[] = [part(room, box(8, 0.19, 0.02), rc.panel, 0, 0.085, -1.02), part(room, box(8, 0.02, 0.03), rc.trim, 0, 0.18, -1.015)];
+  part(room, box(8, 0.05, 6), rc.floor, 0, -0.75, 0);
+  part(room, box(1.75, 0.004, 0.95), rc.pad, 0, 0.002, -0.075); // a deep blotter, so paper and the yellow folder stand out on it
 
-  const models: Record<string, (g: THREE.Group) => void> = {
+  // The window, four panes on a sill, with a view drawn in the theme's own colours.
+  const view = new THREE.CanvasTexture(drawView(c));
+  view.colorSpace = THREE.SRGBColorSpace;
+  part(room, box(0.58, 0.44, 0.02), rc.trim, 0.55, 0.41, -1.01);
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.38), new THREE.MeshBasicMaterial({ map: view }));
+  glass.position.set(0.55, 0.41, -0.998); // three's position is read-only: set it, never assign it
+  room.add(glass);
+  part(room, box(0.012, 0.38, 0.012), rc.trim, 0.55, 0.41, -0.993);
+  part(room, box(0.52, 0.012, 0.012), rc.trim, 0.55, 0.43, -0.993);
+  part(room, box(0.66, 0.022, 0.07), rc.trim, 0.55, 0.19, -0.995);
+
+  // A pinboard leaning on the wall at the back of the desk: notes, red pins and the red string between them,
+  // the way you would piece a scam together.
+  const board = group(room);
+  lowWall.push(board);
+  board.position.set(-0.62, 0, -0.97);
+  board.rotation.x = -0.08;
+  part(board, box(0.6, 0.32, 0.025), rc.trim, 0, 0.16, 0);
+  part(board, box(0.56, 0.28, 0.01), rc.cork, 0, 0.16, 0.014);
+  const pins: THREE.Vector3[] = [];
+  for (const [x, y, w, color, spin] of [
+    [-0.19, 0.22, 0.1, c.card, 0.06],
+    [-0.04, 0.12, 0.09, c.hl, -0.08],
+    [0.11, 0.21, 0.1, tone(c.card, c.good, 0.35), 0.05],
+    [0.2, 0.09, 0.08, tone(c.card, c.danger, 0.3), -0.1],
+  ] as const) {
+    const note = part(board, box(w, w * 0.9, 0.003), color, x, y, 0.021);
+    note.rotation.z = spin;
+    part(note, box(w * 0.6, 0.006, 0.002), c.line, 0, 0.004, 0.002);
+    part(note, box(w * 0.45, 0.006, 0.002), c.line, -w * 0.07, -0.014, 0.002);
+    const pin = blob(board, c.danger, [x, y + w * 0.38, 0.03], [0.009, 0.009, 0.009]);
+    pins.push(pin.position.clone());
+  }
+  board.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([pins[0], pins[1], pins[2], pins[3]]), new THREE.LineBasicMaterial({ color: c.danger })));
+
+  // The lamp's warm pool of light (Sorot sits in it), small enough to stay on the wood, off the desk pad.
+  glow(room, c.hl, 0.3, -1.02, -0.45, 0.5);
+
+  // Furniture from Kenney's Furniture Kit (CC0, public/models/kenney), drawn like everything else here:
+  // toon-shaded with ink outlines, and dimmed to the room's night in the dark theme. Each is scaled to a height
+  // (or stretched to a footprint) and stood on its spot. If one fails to load, the room just goes without it.
+  const loader = new GLTFLoader();
+  let stopped = false;
+  type Fit = { turn?: number; footprint?: [w: number, d: number]; mirror?: boolean; wideOnly?: boolean };
+  const furnish = (name: string, height: number, [x, y, z]: number[], { turn = 0, footprint, mirror, wideOnly }: Fit = {}) =>
+    loader
+      .loadAsync(`/models/kenney/${name}.glb`)
+      .then(({ scene: m }) => {
+        if (stopped) return;
+        m.traverse((o) => {
+          if (!(o instanceof THREE.Mesh)) return;
+          const { name: kind, color: raw } = o.material as THREE.MeshStandardMaterial;
+          // The kit's wood takes the room's own; its other colours are meant as sRGB, though glTF reads them as linear.
+          // The chair's red cushion turns terracotta: red is kept for risk in this app.
+          const own = kind === "wood" ? rc.wood : kind === "woodDark" ? rc.trim : kind === "carpet" ? rc.accent : undefined;
+          const color = own ? own.clone() : new THREE.Color().setRGB(raw.r, raw.g, raw.b, THREE.SRGBColorSpace);
+          if (night && !own) color.lerp(rc.wall, 0.35).multiplyScalar(0.75);
+          o.material = new THREE.MeshToonMaterial({ color });
+          const line = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 40), edges);
+          line.raycast = () => {};
+          o.add(line);
+        });
+        m.rotation.y = turn;
+        const size = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());
+        const k = height / size.y;
+        m.scale.set(footprint ? footprint[0] / size.x : k, k, footprint ? footprint[1] / size.z : k);
+        if (mirror) m.scale.x *= -1;
+        const fit = new THREE.Box3().setFromObject(m);
+        m.position.set(x - (fit.min.x + fit.max.x) / 2, y - fit.min.y, z - (fit.min.z + fit.max.z) / 2);
+        room.add(m);
+        if (wideOnly) {
+          lowWall.push(m); // on a phone it would stand right behind the home page's text, or over its labels
+          m.visible = !narrow;
+        }
+        if (name === "desk") deskTop.visible = false;
+        dirty = true;
+        return m;
+      })
+      .catch(() => undefined);
+
+  // Two desks pushed together make the long one, drawers at either end: one stretched desk looks bloated.
+  furnish("desk", 0.75, [-0.9, -0.75, -0.1], { footprint: [1.8, 1.3] });
+  furnish("desk", 0.75, [0.9, -0.75, -0.1], { footprint: [1.8, 1.3], mirror: true });
+  furnish("lampRoundTable", 0.44, [-1.2, 0, -0.66], { turn: 0.5 });
+  furnish("plantSmall2", 0.17, [-0.22, 0, -0.68], { wideOnly: true });
+  furnish("books", 0.17, [0.42, 0, -0.68], { turn: -0.15, wideOnly: true });
+  furnish("radio", 0.19, [1.05, 0, -0.68], { turn: -0.25 });
+
+  // Your chair, tucked in at the desk. Near the camera the view is narrow, so it sits close to the middle,
+  // low enough that its back fills the foreground below the desk without hiding anything on it.
+  furnish("chairDesk", 0.82, [-0.28, -0.745, 0.7], { turn: -0.2, wideOnly: true });
+
+  // A bookcase on the floor behind the right end of the desk, beside the window: only its upper shelves show
+  // above the desk. Squeezed shallow to fit between desk and wall. Its shelves are found by looking down through
+  // it, so whatever stands on them sits on the boards whatever their height.
+  furnish("bookcaseOpen", 1.6, [1.42, -0.75, -0.89], { footprint: [0.72, 0.26], wideOnly: true }).then((shelf) => {
+    if (!shelf) return;
+    shelf.updateMatrixWorld(true); // just placed: the ray must see it where it now stands
+    const down = new THREE.Raycaster(new THREE.Vector3(1.42, 3, -0.89), new THREE.Vector3(0, -1, 0));
+    const boards = down
+      .intersectObject(shelf, true)
+      .map((h) => h.point.y)
+      .filter((y) => y > 0.05); // only the shelves that show above the desk
+    const [top, ...lower] = boards;
+    if (top !== undefined) furnish("plantSmall3", 0.2, [1.28, top, -0.89], { wideOnly: true });
+    if (top !== undefined) furnish("cardboardBoxOpen", 0.09, [1.56, top, -0.9], { turn: -0.3, wideOnly: true });
+    for (const y of lower) {
+      furnish("books", 0.16, [1.3, y, -0.9], { wideOnly: true });
+      furnish("plantSmall1", 0.16, [1.58, y, -0.9], { wideOnly: true });
+    }
+  });
+
+  // A clock on the wall, stopped at 09.41 like the tablet's own status bar.
+  const clock = group(room);
+  clock.position.set(0.98, 0.48, -1.02); // between the window and the bookcase, clear of the home heading
+  lowWall.push(clock);
+  part(clock, cyl(0.09, 0.015), c.card, 0, 0, 0).rotation.x = Math.PI / 2;
+  part(clock, new THREE.TorusGeometry(0.09, 0.012, 8, 32), rc.trim, 0, 0, 0.004);
+  for (const [len, turns, w] of [[0.05, (9 + 41 / 60) / 12, 0.012], [0.072, 41 / 60, 0.008]] as const) {
+    const hand = group(clock);
+    hand.rotation.z = -turns * Math.PI * 2;
+    part(hand, box(w, len, 0.004), c.ink, 0, len / 2, 0.012);
+  }
+  blob(clock, c.danger, [0, 0, 0.016], [0.008, 0.008, 0.004]);
+
+  // Always there, whatever page is open: a mug with a handle, and a cup of pencils.
+  part(room, cyl(0.05, 0.11), rc.accent, 1.05, 0.055, -0.5);
+  part(room, new THREE.TorusGeometry(0.028, 0.009, 8, 18), rc.accent, 1.1, 0.06, -0.5);
+  part(room, cyl(0.042, 0.1), tone(c.card, c.ink, 0.15), 1.3, 0.05, -0.34);
+  for (const [color, tx, tz] of [[c.hl, 0.12, 0.05], [c.danger, -0.1, 0.08], [c.good, 0.04, -0.12]] as const) {
+    const pencil = part(room, cyl(0.007, 0.16), color, 1.3 + tx * 0.12, 0.13, -0.34 + tz * 0.12);
+    pencil.rotation.set(tz, 0, -tx);
+  }
+
+  const models: Record<string, (g: THREE.Group) => Face> = {
     printout(g) {
-      part(g, box(0.26, 0.006, 0.34), c.card, 0, 0.005, 0);
-      part(g, box(0.18, 0.003, 0.025), c.hl, -0.01, 0.01, -0.09);
-      part(g, box(0.2, 0.003, 0.012), c.line, 0, 0.01, -0.03);
-      part(g, box(0.14, 0.003, 0.012), c.line, -0.03, 0.01, 0.01);
-      const lens = part(g, new THREE.TorusGeometry(0.06, 0.012, 8, 24), c.ink, 0.07, 0.02, 0.06);
+      const sheet = group(g);
+      shadow(sheet, 0.26, 0.34);
+      part(sheet, box(0.26, 0.006, 0.34), c.card, 0, 0.005, 0);
+      part(sheet, box(0.18, 0.003, 0.025), c.hl, -0.01, 0.01, -0.09);
+      part(sheet, box(0.2, 0.003, 0.012), c.line, 0, 0.01, -0.03);
+      part(sheet, box(0.14, 0.003, 0.012), c.line, -0.03, 0.01, 0.01);
+      // Beside the paper, not on it: the page would cover it.
+      const lens = part(g, new THREE.TorusGeometry(0.045, 0.009, 8, 24), c.ink, 0.19, 0.009, 0.08);
       lens.rotation.x = -Math.PI / 2;
-      const handle = part(g, cyl(0.01, 0.1), c.ink, 0.13, 0.02, 0.14);
+      const handle = part(g, cyl(0.008, 0.075), c.ink, 0.235, 0.008, 0.14);
       handle.rotation.set(Math.PI / 2, 0, 0.65);
-    },
-    paperStack(g) {
-      for (let i = 0; i < 5; i++) part(g, box(0.26, 0.012, 0.34), c.card, (i % 2) * 0.006, 0.008 + i * 0.012, (i % 3) * 0.004);
-      part(g, box(0.18, 0.003, 0.025), c.hl, 0, 0.07, -0.08);
-    },
-    magnifier(g) {
-      const lens = part(g, new THREE.TorusGeometry(0.1, 0.018, 8, 28), c.ink, 0, 0.17, 0);
-      lens.rotation.y = -0.4;
-      part(g, cyl(0.014, 0.1), c.ink, 0, 0.05, 0);
-      part(g, cyl(0.06, 0.012), c.ink, 0, 0.006, 0);
+      return { sheet, axis: "z", face: faceOn(sheet, 0.26, 0.34, 0, 0.008, 0, true) };
     },
     cards(g) {
+      const sheet = group(g);
       const green = c.card.clone().lerp(c.good, 0.55);
-      for (let i = 0; i < 4; i++) part(g, box(0.2, 0.012, 0.28), i === 3 ? green : c.card, 0, 0.008 + i * 0.013, i * 0.002);
+      shadow(sheet, 0.2, 0.28);
+      // The top card is centred on the stretch, so stretching never slides the page off it.
+      for (let i = 0; i < 4; i++) part(sheet, slab(0.2, 0.28, 0.012, 0.018), i === 3 ? green : c.card, 0, 0.008 + i * 0.013, (i - 3) * 0.002);
+      return { sheet, axis: "z", face: faceOn(sheet, 0.18, 0.26, 0, 0.053, 0, true) };
     },
-    redCards(g) {
-      const red = c.card.clone().lerp(c.danger, 0.55);
-      for (let i = 0; i < 4; i++) part(g, box(0.2, 0.012, 0.28), i === 3 ? red : c.card, 0, 0.008 + i * 0.013, i * 0.002);
+    // A tablet in portrait, 3:4, leaning back on a folding stand: thin even bezels and a camera dot at the top.
+    tablet(g) {
+      const body = group(g);
+      body.rotation.x = -0.3;
+      body.position.y = 0.185;
+      part(body, slab(0.28, 0.37, 0.012, 0.024, true), c.ink, 0, 0, 0);
+      part(body, slab(0.255, 0.34, 0.003, 0.012, true), c.card, 0, 0, 0.0075);
+      part(body, cyl(0.004, 0.002), c.line, 0, 0.1755, 0.0065).rotation.x = Math.PI / 2; // the camera dot
+      part(body, box(0.13, 0.03, 0.002), c.paper, -0.045, 0.1, 0.0095);
+      part(body, box(0.13, 0.03, 0.002), c.hl, 0.045, 0.05, 0.0095);
+      part(body, box(0.15, 0.03, 0.002), c.card.clone().lerp(c.warn, 0.5), -0.035, 0, 0.0095);
+      // The stand: a lip it rests in at the front, and a leg folded out behind.
+      part(g, slab(0.3, 0.07, 0.016, 0.014), c.ink, 0, 0.008, -0.01);
+      const leg = part(g, slab(0.16, 0.26, 0.008, 0.012, true), c.ink, 0, 0.12, -0.1);
+      leg.rotation.x = 0.42;
+      return { sheet: body, axis: "y", face: faceOn(body, 0.255, 0.34, 0, 0, 0.009, false) };
     },
-    phone(g) {
-      const body = new THREE.Group();
-      body.rotation.x = -0.32;
-      body.position.y = 0.17;
-      g.add(body);
-      part(body, box(0.17, 0.33, 0.016), c.ink, 0, 0, 0);
-      part(body, box(0.15, 0.3, 0.004), c.card, 0, 0, 0.01);
-      part(body, box(0.09, 0.03, 0.002), c.paper, -0.022, 0.09, 0.013);
-      part(body, box(0.09, 0.03, 0.002), c.hl, 0.022, 0.04, 0.013);
-      part(body, box(0.1, 0.03, 0.002), c.card.clone().lerp(c.warn, 0.5), -0.015, -0.01, 0.013);
-      part(g, box(0.17, 0.02, 0.1), c.ink, 0, 0.01, -0.04);
-    },
-    chatNotes(g) {
-      part(g, box(0.18, 0.006, 0.18), c.hl, -0.03, 0.004, -0.02).rotation.y = 0.2;
-      part(g, box(0.18, 0.006, 0.18), c.card.clone().lerp(c.warn, 0.5), 0.04, 0.01, 0.06).rotation.y = -0.15;
-    },
-    // Yellow is kept for someone in a hurry: on the home desk, this is the one bright thing.
+    // Yellow is kept for someone in a hurry: on the desk, this is the one bright thing.
     folder(g) {
-      part(g, box(0.34, 0.02, 0.42), c.hl, 0, 0.012, 0);
-      part(g, box(0.12, 0.022, 0.04), c.hl, -0.1, 0.012, -0.22);
-      part(g, box(0.26, 0.004, 0.02), c.ink, 0, 0.025, -0.1);
-    },
-    pen(g) {
-      const pen = part(g, cyl(0.016, 0.3), c.hl, 0, 0.02, 0);
-      pen.rotation.set(Math.PI / 2, 0, 0.7);
-      part(g, box(0.22, 0.006, 0.3), c.card, 0.02, 0.004, 0.02).rotation.y = 0.15;
-      part(g, box(0.14, 0.003, 0.012), c.line, 0.02, 0.009, -0.06);
-      part(g, box(0.14, 0.003, 0.012), c.line, 0.02, 0.009, -0.02);
+      const sheet = group(g);
+      shadow(sheet, 0.34, 0.42);
+      part(sheet, slab(0.34, 0.42, 0.02, 0.016), c.hl, 0, 0.012, 0);
+      part(sheet, slab(0.12, 0.05, 0.022, 0.012), c.hl, -0.1, 0.012, -0.215);
+      part(sheet, box(0.26, 0.004, 0.02), c.ink, 0, 0.025, -0.1);
+      return { sheet, axis: "z", face: faceOn(sheet, 0.3, 0.38, 0, 0.022, 0, true) };
     },
   };
 
-  const stages = (Object.keys(DESKS) as Route[]).map((route) => {
-    const group = new THREE.Group();
-    scene.add(group);
-    const props = DESKS[route].map((p) => {
-      const g = new THREE.Group();
-      models[p.model](g);
-      g.userData.href = p.href;
-      group.add(g);
-      return { ...p, g };
-    });
-    return { route, group, props, t: route === first ? 1 : 0 };
+  const things = THINGS.map((t) => {
+    const g = new THREE.Group();
+    g.userData.href = t.href;
+    scene.add(g);
+    return { ...t, g, ...models[t.model](g), kFrom: 1, kTo: 1 };
   });
-  const clickable = stages.find((s) => s.route === "home")!.props.map((p) => p.g);
+  const clickable = things.map((t) => t.g);
+  // A page with no thing of its own (not found) lies on the printout.
+  const thingFor = (r: Route) => (r === "home" ? undefined : things.find((t) => t.href === `/${r === "lain" ? "periksa" : r}`));
 
   const sorot = buildCat(c.ink);
   scene.add(sorot.cat);
@@ -186,32 +407,8 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   let catShown = -1;
 
   const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 20);
-  scene.add(camera);
-
-  // The frame behind a page. It hangs off the camera, so it always lines up with the HTML page on top
-  // of it while the desk shifts underneath as you look around. It draws last so props never poke through.
-  const frame = new THREE.Group();
-  camera.add(frame);
-  const flat = (color: THREE.Color) => {
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color, depthTest: false, toneMapped: false }));
-    m.renderOrder = 10;
-    frame.add(m);
-    return m;
-  };
-  const shadow = flat(c.hl);
-  const border = flat(c.ink);
-  const clip = flat(c.ink);
-  const FRAMES: Record<Route, { color: THREE.Color; clip: boolean }> = {
-    home: { color: c.ink, clip: false },
-    periksa: { color: c.card, clip: true },
-    latihan: { color: c.card.clone().lerp(c.good, 0.55), clip: false },
-    simulasi: { color: c.ink, clip: false },
-    bertindak: { color: c.hl, clip: true },
-    lain: { color: c.card, clip: false },
-  };
 
   let route = first;
-  let frameT = first === "home" ? 0 : 1;
   let narrow = false;
   let dirty = true;
   let mx = 0;
@@ -220,11 +417,72 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   let lookY = 0;
   let hover: string | null = null;
   let spread = 1;
-  const lookHome = new THREE.Quaternion();
-  const lookPage = new THREE.Quaternion();
+  let rect = { left: 0, top: 0, width: 1, height: 1 };
+  let flyT = 1;
+  let shown = "";
   const eye = new THREE.Vector3();
+  const lookHome = new THREE.Quaternion();
+  const from = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
+  const to = { pos: new THREE.Vector3(), quat: new THREE.Quaternion() };
   const spin = new THREE.Euler(0, 0, 0, "YXZ");
+  const turn = new THREE.Quaternion();
+  const tilt = new THREE.Quaternion();
+  const up = new THREE.Vector3(0, 1, 0);
+  const focus = new THREE.Vector3(); // the middle of the open page
   const v = new THREE.Vector3();
+  const r = new THREE.Vector3();
+  const u = new THREE.Vector3();
+  const n = new THREE.Vector3();
+  const mtx = new THREE.Matrix4();
+  const pxToFace = new THREE.Matrix4();
+  const toScreen = new THREE.Matrix4();
+
+  // Things where they lie on the desk, the one under the pointer lifted a little.
+  const layout = () => {
+    for (const t of things) {
+      const [x, z] = narrow ? t.narrow : t.wide;
+      t.g.position.set(x * spread, hover === t.href ? 0.015 : 0, z);
+      t.g.scale.setScalar(narrow ? 0.62 : 1); // a phone has room for far less desk
+    }
+    const [x, z] = narrow ? CAT.narrow : CAT.wide;
+    sorot.cat.position.set(x * spread, 0.008, z); // just above the desk, so the outline underneath does not cut into it
+    sorot.cat.rotation.y = Math.atan2(eye.x - x * spread, eye.z - z); // always sits facing you
+    sorot.cat.scale.setScalar(narrow ? 0.55 : 0.85);
+    for (const o of lowWall) o.visible = !narrow;
+    dirty = true;
+  };
+
+  // Swing a camera pose round the open page, keeping the page's middle where it is on screen.
+  const orbit = (pos: THREE.Vector3, quat: THREE.Quaternion, yaw: number, pitch: number, side: THREE.Vector3) => {
+    turn.setFromAxisAngle(up, yaw).multiply(tilt.setFromAxisAngle(side, pitch));
+    pos.sub(focus).applyQuaternion(turn).add(focus);
+    quat.premultiply(turn);
+  };
+
+  // Where the camera ends up: in your chair for home; otherwise over the open page's thing, close enough that the
+  // middle of the page shows at its own size (text at its normal size), then leaned so it reads as a thing on the desk.
+  const aim = () => {
+    const open = thingFor(route);
+    for (const t of things) t.kTo = 1;
+    if (!open) {
+      to.pos.copy(eye);
+      to.quat.copy(lookHome);
+      return;
+    }
+    open.kTo = (rect.height / rect.width) * (open.face.scale.x / open.face.scale.y);
+    scene.updateMatrixWorld(true);
+    const f = open.face.matrixWorld;
+    const p = planeFromRect(rect, canvas.clientWidth, canvas.clientHeight, camera.fov, 1);
+    const d = r.setFromMatrixColumn(f, 0).length() / p.w;
+    r.normalize();
+    u.setFromMatrixColumn(f, 1).normalize();
+    n.setFromMatrixColumn(f, 2).normalize();
+    to.pos.setFromMatrixPosition(f).addScaledVector(n, d).addScaledVector(r, -p.x * d).addScaledVector(u, -p.y * d);
+    to.quat.setFromRotationMatrix(mtx.makeBasis(r, u, n));
+    focus.setFromMatrixPosition(f);
+    // A phone's screen has little room to lean into, and turning a narrow page sideways slants every line.
+    orbit(to.pos, to.quat, narrow ? 0 : open.lean[1], open.lean[0] * (narrow ? 0.35 : 1), r);
+  };
 
   const place = () => {
     const { clientWidth: w, clientHeight: h } = canvas;
@@ -235,144 +493,60 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     camera.fov = narrow ? 50 : 45;
     camera.updateProjectionMatrix();
     spread = narrow ? 1 : Math.min(1, camera.aspect / 1.6); // squarer windows pull things in from the edges
-    // Seated: eye above the desk, looking down at it. On a phone you bow your head further once a page is
-    // open, which lifts the desk's far edge into the strip above the sheet.
-    eye.set(0, narrow ? 0.95 : 0.66, narrow ? 1.2 : 1.1);
+    // Seated: eye above the desk, looking down at it.
+    eye.set(0, narrow ? 0.95 : 0.72, narrow ? 1.2 : 1.3); // on wide screens, back enough to see the study round the desk
     camera.position.copy(eye);
-    camera.lookAt(0, narrow ? -0.16 : 0.03, -0.35);
+    camera.lookAt(0, narrow ? -0.16 : 0.02, -0.33);
     lookHome.copy(camera.quaternion);
-    camera.lookAt(0, narrow ? -0.55 : 0.03, narrow ? -0.3 : -0.35);
-    lookPage.copy(camera.quaternion);
-
-    const r = sheet()?.getBoundingClientRect();
-    if (r) {
-      const p = planeFromRect(r, w, h, camera.fov, FRAME_DIST);
-      const pad = FRAME_PAD * p.unit;
-      border.scale.set(p.w + pad * 2, p.h + pad * 2, 1);
-      border.position.set(p.x, p.y, -FRAME_DIST);
-      shadow.scale.copy(border.scale);
-      shadow.position.set(p.x + pad * 1.2, p.y - pad * 1.2, -FRAME_DIST - 0.001);
-      clip.scale.set(p.w * 0.22, pad * 3, 1);
-      clip.position.set(p.x, p.y + p.h / 2 + pad * 0.6, -FRAME_DIST + 0.001);
-      frame.userData.drop = p.h + 40 * p.unit;
+    rect = pageRect(route, w, h);
+    layout();
+    aim();
+    const el = sheet();
+    if (el && route !== "home") {
+      el.style.width = `${rect.width}px`;
+      el.style.height = `${rect.height}px`;
+      el.style.setProperty("--page-h", `${rect.height}px`); // lets the tablet's chat fill its screen
+      shown = "";
     }
-    dirty = true;
   };
   const size = new ResizeObserver(place);
   size.observe(canvas);
-  const watched = sheet();
-  if (watched) size.observe(watched);
 
-  const paint = (mat: THREE.Material, color: THREE.Color) => (mat as THREE.MeshBasicMaterial).color.copy(color);
-  const styleFrame = () => {
-    paint(border.material, FRAMES[route].color);
-    clip.visible = FRAMES[route].clip;
-  };
-  styleFrame();
-
-  const ray = new THREE.Raycaster();
-  const propAt = (e: PointerEvent) => {
-    if (route !== "home") return null;
-    const r = canvas.getBoundingClientRect();
-    ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
-    let o: THREE.Object3D | null = ray.intersectObjects(clickable, true)[0]?.object ?? null;
-    while (o && !o.userData.href) o = o.parent;
-    return (o?.userData.href as string | undefined) ?? null;
+  // The page's real HTML laid onto its thing: page pixels to the thing's face, to the screen, as one CSS matrix.
+  const pageOn = (face: THREE.Object3D) => {
+    const { clientWidth: w, clientHeight: h } = canvas;
+    pxToFace.set(1 / rect.width, 0, 0, -0.5, 0, -1 / rect.height, 0, 0.5, 0, 0, 1, 0, 0, 0, 0, 1);
+    toScreen.set(w / 2, 0, 0, w / 2, 0, -h / 2, 0, h / 2, 0, 0, 1, 0, 0, 0, 0, 1);
+    mtx.multiplyMatrices(toScreen, camera.projectionMatrix).multiply(camera.matrixWorldInverse).multiply(face.matrixWorld).multiply(pxToFace);
+    return `matrix3d(${mtx.elements.join(",")})`;
   };
 
-  const onMove = (e: PointerEvent) => {
-    if (e.pointerType !== "mouse") return;
-    mx = (e.clientX / innerWidth) * 2 - 1;
-    my = (e.clientY / innerHeight) * 2 - 1;
-    const onCanvas = e.target === canvas;
-    const label = (e.target as Element).closest?.("[data-anchor]")?.getAttribute("data-anchor") ?? null;
-    const next = label ?? (onCanvas ? propAt(e) : null);
-    if (onCanvas) canvas.style.cursor = next ? "pointer" : "";
-    if (next !== hover) {
-      hover = next;
-      dirty = true;
-    }
-  };
-  const onClick = (e: MouseEvent) => {
-    const href = propAt(e as PointerEvent);
-    if (href) onOpen(href);
-  };
-  addEventListener("pointermove", onMove);
-  canvas.addEventListener("click", onClick);
-
-  let last = performance.now();
-  let raf = requestAnimationFrame(function tick(now) {
-    raf = requestAnimationFrame(tick);
-    const dt = Math.min((now - last) / 1000, 0.1);
-    last = now;
-    const step = reduced.matches ? 1 : dt / SWITCH;
-
-    for (const s of stages) {
-      const want = s.route === route ? 1 : 0;
-      if (s.t !== want) {
-        s.t = want > s.t ? Math.min(1, s.t + step) : Math.max(0, s.t - step);
-        dirty = true;
-      }
-    }
-    const wantFrame = route === "home" ? 0 : 1;
-    if (frameT !== wantFrame) {
-      frameT = wantFrame > frameT ? Math.min(1, frameT + step) : Math.max(0, frameT - step);
-      dirty = true;
-    }
-
-    // Looking around from the chair: a few degrees at most, and only with a mouse.
-    const tx = reduced.matches ? 0 : mx;
-    const ty = reduced.matches ? 0 : my;
-    if (Math.abs(tx - lookX) + Math.abs(ty - lookY) > 0.001) {
-      const k = Math.min(1, dt * 4);
-      lookX += (tx - lookX) * k;
-      lookY += (ty - lookY) * k;
-      dirty = true;
-    }
-    // Sorot keeps the desk redrawing, so cap it at 30 fps, and stop when nothing of the desk is visible.
-    if (!reduced.matches && sheet()?.dataset.full !== "true") {
-      catClock += dt;
-      if (catClock - catShown >= 1 / 30) {
-        catShown = catClock;
-        sorot.pose(catClock);
-        dirty = true;
-      }
-    }
-    if (!dirty) return;
+  const draw = () => {
     dirty = false;
-
-    {
-      const aside = easeOut(frameT);
-      const [hx, hz] = narrow ? CAT.home.narrow : CAT.home.wide;
-      const [px, pz] = narrow ? CAT.page.narrow : CAT.page.wide;
-      const x = (hx + (px - hx) * aside) * spread;
-      const z = hz + (pz - hz) * aside;
-      sorot.cat.position.set(x, 0.008, z); // just above the desk, so the outline underneath does not cut into it
-      sorot.cat.rotation.y = Math.atan2(eye.x - x, eye.z - z); // always sits facing you
-      sorot.cat.scale.setScalar(narrow ? 0.55 : 0.85);
+    const e = easeOut(flyT);
+    camera.position.lerpVectors(from.pos, to.pos, e);
+    camera.quaternion.slerpQuaternions(from.quat, to.quat, e);
+    if (route === "home") {
+      // Looking around from the chair: a few degrees at most, and only with a mouse.
+      camera.position.x += lookX * 0.02 * e;
+      camera.quaternion.multiply(turn.setFromEuler(spin.set(-lookY * 0.012 * e, -lookX * 0.025 * e, 0)));
+    } else {
+      // Leaning round the page you are reading, a little, as the mouse moves over the desk.
+      orbit(camera.position, camera.quaternion, lookX * 0.035 * e, -lookY * 0.02 * e, v.set(1, 0, 0).applyQuaternion(camera.quaternion));
     }
-
-    for (const s of stages) {
-      s.group.visible = s.t > 0;
-      const e = easeOut(s.t);
-      for (const p of s.props) {
-        const [x, z] = narrow ? p.narrow : p.wide;
-        // Things slide across the desk from its sides, the way you would push them away and pull new ones in.
-        p.g.position.set(x * spread + Math.sign(x) * (1 - e) * 2, hover && p.href === hover ? 0.015 : 0, z);
-        p.g.scale.setScalar(narrow ? 0.62 : 1); // a phone has room for far less desk
-      }
-    }
-    frame.visible = frameT > 0;
-    frame.position.y = -(1 - easeOut(frameT)) * (frame.userData.drop ?? 2);
-
-    camera.position.copy(eye);
-    camera.position.x += lookX * 0.02;
-    camera.quaternion.slerpQuaternions(lookHome, lookPage, easeOut(frameT));
-    camera.quaternion.multiply(new THREE.Quaternion().setFromEuler(spin.set(-lookY * 0.012, -lookX * 0.025, 0)));
+    for (const t of things) t.sheet.scale[t.axis] = t.kFrom + (t.kTo - t.kFrom) * e;
     camera.updateMatrixWorld(true);
+    scene.updateMatrixWorld();
     renderer.render(scene, camera);
 
-    // Pin the page's HTML labels to the things they name.
+    const open = thingFor(route);
+    const el = sheet();
+    if (open && el) {
+      const next = pageOn(open.face);
+      if (next !== shown) el.style.transform = shown = next;
+    }
+
+    // Pin the home page's HTML labels to the things they name.
     if (route === "home") {
       const { clientWidth: w, clientHeight: h } = canvas;
       document.querySelectorAll<HTMLElement>("[data-anchor]").forEach((el) => {
@@ -384,6 +558,96 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
         el.style.setProperty("--y", `${((1 - v.y) / 2) * h}px`);
       });
     }
+  };
+
+  // While reading, the other things on the desk say what they open when you point at them.
+  const tip = Object.assign(document.createElement("p"), { className: "meja-tip", hidden: true });
+  tip.setAttribute("aria-hidden", "true"); // the same choices are real links on the home page
+  document.body.append(tip);
+
+  const ray = new THREE.Raycaster();
+  const propAt = (e: PointerEvent) => {
+    const b = canvas.getBoundingClientRect();
+    ray.setFromCamera(new THREE.Vector2(((e.clientX - b.left) / b.width) * 2 - 1, -((e.clientY - b.top) / b.height) * 2 + 1), camera);
+    let o: THREE.Object3D | null = ray.intersectObjects(clickable, true)[0]?.object ?? null;
+    while (o && !o.userData.href) o = o.parent;
+    const href = (o?.userData.href as string | undefined) ?? null;
+    return href === thingFor(route)?.href ? null : href; // the page you are reading is already open
+  };
+
+  const onMove = (e: PointerEvent) => {
+    if (e.pointerType !== "mouse") return;
+    // Over the page, hold still: what you are about to click must not slide away under the pointer.
+    if (route === "home" || !sheet()?.contains(e.target as Node)) {
+      mx = (e.clientX / innerWidth) * 2 - 1;
+      my = (e.clientY / innerHeight) * 2 - 1;
+    }
+    const onCanvas = e.target === canvas;
+    const label = (e.target as Element).closest?.("[data-anchor]")?.getAttribute("data-anchor") ?? null;
+    const next = label ?? (onCanvas ? propAt(e) : null);
+    if (onCanvas) canvas.style.cursor = next ? "pointer" : "";
+    const name = route !== "home" && next ? THINGS.find((t) => t.href === next)?.name : undefined;
+    tip.hidden = !name;
+    if (name) {
+      tip.textContent = name;
+      tip.style.translate = `${e.clientX + 16}px ${e.clientY + 18}px`;
+    }
+    if (next !== hover) {
+      hover = next;
+      layout();
+    }
+  };
+  const onClick = (e: MouseEvent) => {
+    const href = propAt(e as PointerEvent);
+    if (href) onOpen(href);
+  };
+  // Scrolling with the pointer on the desk around the page scrolls the page, as anywhere on a web page.
+  const onWheel = (e: WheelEvent) => {
+    if (route === "home" || sheet()?.contains(e.target as Node)) return;
+    const page = sheet()?.querySelector("main");
+    if (!page) return;
+    const px = e.deltaMode === 1 ? e.deltaY * 40 : e.deltaMode === 2 ? e.deltaY * page.clientHeight : e.deltaY;
+    page.scrollBy({ top: px, behavior: Math.abs(px) >= 50 ? "smooth" : "instant" }); // a wheel notch glides, a trackpad follows
+  };
+  // Esc puts the page down, as backing out of something in a game. Not while typing: there Esc belongs to the field.
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key !== "Escape" || route === "home" || e.defaultPrevented) return;
+    if ((e.target as Element).closest?.("input, textarea, select, [contenteditable]")) return;
+    onOpen("/");
+  };
+  addEventListener("pointermove", onMove);
+  addEventListener("wheel", onWheel, { passive: true });
+  addEventListener("keydown", onKey);
+  canvas.addEventListener("click", onClick);
+
+  place();
+  let last = performance.now();
+  let raf = requestAnimationFrame(function tick(now) {
+    raf = requestAnimationFrame(tick);
+    const dt = Math.min((now - last) / 1000, 0.1);
+    last = now;
+    if (flyT < 1) {
+      flyT = Math.min(1, flyT + dt / FLY);
+      dirty = true;
+    }
+    const tx = reduced.matches ? 0 : mx;
+    const ty = reduced.matches ? 0 : my;
+    if (Math.abs(tx - lookX) + Math.abs(ty - lookY) > 0.001) {
+      const k = Math.min(1, dt * 4);
+      lookX += (tx - lookX) * k;
+      lookY += (ty - lookY) * k;
+      dirty = true;
+    }
+    // Sorot keeps the desk redrawing, so cap it at 30 fps.
+    if (!reduced.matches) {
+      catClock += dt;
+      if (catClock - catShown >= 1 / 30) {
+        catShown = catClock;
+        sorot.pose(catClock);
+        dirty = true;
+      }
+    }
+    if (dirty) draw();
   });
 
   return {
@@ -391,15 +655,27 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       route = next;
       hover = null;
       canvas.style.cursor = "";
-      styleFrame();
+      tip.hidden = true;
+      from.pos.copy(camera.position);
+      from.quat.copy(camera.quaternion);
+      for (const t of things) t.kFrom = t.sheet.scale[t.axis];
+      flyT = reduced.matches ? 1 : 0;
+      if (route === "home") sheet()?.removeAttribute("style");
       place();
-      requestAnimationFrame(place); // the new page's box only settles once the swap has painted
+      draw(); // before the browser paints the new page, so it never shows unplaced
+      // Keys scroll the page at once, and a screen reader starts on the new page.
+      if (route !== "home") sheet()?.querySelector("main")?.focus({ preventScroll: true });
     },
     stop() {
+      stopped = true;
       cancelAnimationFrame(raf);
       size.disconnect();
       removeEventListener("pointermove", onMove);
+      removeEventListener("wheel", onWheel);
+      removeEventListener("keydown", onKey);
       canvas.removeEventListener("click", onClick);
+      tip.remove();
+      sheet()?.removeAttribute("style");
       scene.traverse((o) => {
         if (o instanceof THREE.Mesh || o instanceof THREE.LineSegments) {
           o.geometry.dispose(); // shared geometries and materials are safe to dispose twice

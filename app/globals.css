@@ -20,8 +20,8 @@
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+/* Set before first paint by the script in the layout: the saved choice, else the system's setting. */
+:root[data-theme="dark"] {
     color-scheme: dark;
     --paper: #121317;
     --card: #1b1d22;
@@ -36,7 +36,6 @@
     --good: #5bc79a;
     --tape: rgb(255 255 255 / 0.16);
     --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
 }
 
 @theme inline {
@@ -111,92 +110,6 @@ body {
   }
 }
 
-
-/* ---------- Navigation: bottom tab bar on phones, header pill on wide screens ---------- */
-
-.nav {
-  position: fixed;
-  z-index: 40;
-  inset-inline: 0;
-  bottom: 0;
-  padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
-  border-top: 2px solid var(--line);
-  background: var(--card);
-}
-.nav ul {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.25rem;
-}
-.nav-link {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-height: 52px;
-  align-items: center;
-  justify-content: center;
-  gap: 0.15rem;
-  padding: 0.3rem 0.25rem;
-  border-radius: 10px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--muted);
-  text-align: center;
-  line-height: 1.1;
-  transition: color 0.2s, transform 0.15s;
-}
-.nav-link svg {
-  position: relative;
-  flex: none;
-  width: 22px;
-  height: 22px;
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.nav-link:hover {
-  color: var(--ink);
-}
-.nav-link:hover svg {
-  transform: translateY(-2px) rotate(-8deg);
-}
-.nav-link:active {
-  transform: scale(0.94);
-}
-.nav-link[aria-current="page"] {
-  color: #17181c;
-}
-@media (min-width: 768px) {
-  .nav {
-    position: static;
-    padding: 0;
-    border: 0;
-    background: none;
-  }
-  .nav ul {
-    display: flex;
-    gap: 0.25rem;
-    padding: 4px;
-    border: 2px solid var(--line);
-    border-radius: 12px;
-    background: var(--card);
-  }
-  .nav-link {
-    flex-direction: row;
-    gap: 0.45rem;
-    min-height: 44px;
-    padding: 0 0.85rem;
-    font-size: 0.9rem;
-  }
-  .nav-link svg {
-    width: 18px;
-    height: 18px;
-  }
-}
-.nav-mark {
-  position: absolute;
-  inset: 0;
-  border-radius: 8px;
-  background: var(--hl);
-}
 
 /* ---------- Buttons: hard shadow = "you can press this" ---------- */
 
@@ -545,35 +458,6 @@ body {
   animation: rise 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-::view-transition-group(nav-mark) {
-  animation-duration: 0.35s;
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* ---------- Logo ---------- */
-
-.logo svg {
-  transition: rotate 0.3s cubic-bezier(0.22, 1, 0.36, 1), scale 0.15s;
-}
-.logo:hover svg {
-  rotate: -8deg;
-}
-.logo:active svg {
-  scale: 0.9;
-}
-.logo .logo-hl {
-  transform-box: fill-box;
-  transform-origin: left center;
-}
-.logo:hover .logo-hl {
-  animation: logo-sweep 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-@keyframes logo-sweep {
-  from {
-    transform: scaleX(0);
-  }
-}
-
 /* Red-pen margin notes */
 .hand {
   display: inline-block;
@@ -723,20 +607,30 @@ body {
 :root:not([data-world]) .world {
   visibility: hidden;
 }
-.world-top {
-  position: relative;
-  z-index: 10;
-  flex: none;
-}
-
 /* The sheet of paper a page lives on. It scrolls by itself; the desk stays put. */
 .lembar-wrap {
   position: relative;
   z-index: 10;
   flex: 1;
   min-height: 0;
-  width: min(860px, 100% - 2.5rem);
-  margin: 1.5rem auto 1.75rem;
+  width: min(860px, 100% - 1.5rem);
+  margin: 4.5rem auto 1.5rem;
+}
+/* With the desk running, the page lies on a thing on it: the scene sizes it and lays it onto that thing. */
+:root[data-world] .lembar-wrap:not([data-page="home"]) {
+  position: fixed;
+  top: 0;
+  left: 0;
+  margin: 0;
+  transform-origin: 0 0;
+}
+/* Shaded like the thing it lies on: lit from the lamp's side, falling off away from it. */
+:root[data-world] .lembar-wrap:not([data-page="home"])::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, transparent 35%, rgb(0 0 0 / 0.07));
+  pointer-events: none;
 }
 .lembar {
   height: 100%;
@@ -746,55 +640,86 @@ body {
   scroll-padding-top: 2rem; /* so jumping to a page's first heading keeps the margin above it */
   padding: 2rem clamp(1.1rem, 4vw, 2.5rem) 3rem;
   background: var(--grain) var(--paper);
-  animation: lembar-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+/* The page gets focus when it opens, so keys scroll it: a quiet inset line, not a heavy frame round the page. */
 .lembar:focus-visible {
-  outline-offset: -4px;
+  outline: 2px solid color-mix(in srgb, var(--ink) 30%, transparent);
+  outline-offset: -2px;
 }
-@keyframes lembar-in {
-  from {
-    transform: translateY(100dvh);
+/* The way back, in the corner like a game's "back" prompt. */
+.lembar-back {
+  position: fixed;
+  z-index: 20;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding-inline: 0.85rem 1rem;
+  font-size: 0.9rem;
+  box-shadow: 2px 2px 0 var(--shadow);
+}
+.lembar-back kbd {
+  display: none;
+  padding: 0.05rem 0.35rem;
+  border: 1.5px solid currentColor;
+  border-radius: 5px;
+  font: 700 0.7rem/1.2 var(--font-sans);
+  opacity: 0.6;
+}
+@media (pointer: fine) {
+  .lembar-back kbd {
+    display: inline-block;
   }
 }
-.lembar-size {
-  position: absolute;
-  top: -1.5rem;
+/* On the desk the page's words fade where it scrolls on, so it is plain there is more of it. Both fades fall in
+   the page's own padding, so nothing stays hidden at the very top or bottom. The paper sits on the frame
+   instead, so only the words fade, not the paper into whatever lies under it. */
+:root[data-world] .lembar-wrap:not([data-page="home"]) {
+  background: var(--grain) var(--paper);
+}
+:root[data-world] .lembar-wrap:not([data-page="home"]) .lembar {
+  background: none;
+  mask-image: linear-gradient(transparent, #000 1.25rem, #000 calc(100% - 3rem), transparent);
+  scrollbar-color: color-mix(in srgb, var(--ink) 35%, transparent) transparent;
+}
+/* Day or night at the desk, in the top right on every page, across from the way back. */
+.tema {
+  position: fixed;
+  z-index: 20;
+  top: 0.75rem;
   right: 0.75rem;
   width: 44px;
   padding-inline: 0;
   box-shadow: 2px 2px 0 var(--shadow);
 }
-@media (min-width: 1000px) {
-  .lembar-wrap:not([data-full="true"]) .lembar-size {
-    top: 0;
-    right: -4.25rem;
-  }
+.tema svg {
+  transition: rotate 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.lembar-wrap[data-full="true"] {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  width: 100%;
-  margin: 0;
+.tema:hover svg {
+  rotate: -20deg;
 }
-.lembar-wrap[data-full="true"] .lembar {
-  padding-top: 4rem;
-  padding-inline: max(1.25rem, calc(50% - 30rem));
-  animation: none;
+:root[data-theme="dark"] .tema .bulan,
+:root:not([data-theme="dark"]) .tema .matahari {
+  display: none;
 }
-.lembar-wrap[data-full="true"] .lembar-size {
-  top: 0.75rem;
-  right: 1.25rem;
-}
-/* Phones: leave a strip of desk showing above the page, and room for the bottom tab bar. */
+/* Phones: the home heading runs the full width, so keep it clear of the switch. */
 @media (max-width: 767px) {
-  .lembar-wrap {
-    width: calc(100% - 1.5rem);
-    margin: 6rem auto calc(5.25rem + env(safe-area-inset-bottom));
+  .lembar-wrap[data-page="home"] h1 {
+    padding-right: 3rem;
   }
-  .lembar-size {
-    display: none;
-  }
+}
+/* What a thing on the desk opens, beside the pointer, while you read another page. */
+.meja-tip {
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  padding: 0.3rem 0.6rem;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  box-shadow: 2px 2px 0 var(--shadow);
+  font-size: 0.85rem;
+  font-weight: 700;
+  pointer-events: none;
 }
 /* Without WebGL there is no desk behind it: a plain bordered page. */
 :root:not([data-world]) .lembar {
@@ -984,6 +909,254 @@ body {
 
 } /* end components */
 
+/* ---------- On the desk: each page dressed as the thing it lies on ----------
+   Outside the components layer on purpose: these restyle pages that are also plain pages without WebGL,
+   so they must win over the pages' own utilities, but only while the desk is running. */
+
+.kop,
+.tab-status,
+.tab-home {
+  display: none;
+}
+:root[data-world] .lembar-wrap:not([data-page="home"]) {
+  display: flex;
+  flex-direction: column;
+}
+:root[data-world] .lembar-wrap:not([data-page="home"]) > .lembar {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
+/* The printout: a worksheet off the printer, with a letterhead, ruled writing lines and boxes to tick. */
+:root[data-world] [data-page="periksa"] {
+  background: var(--grain) var(--card);
+}
+:root[data-world] [data-page="periksa"] .kop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: -0.5rem 0 2rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 4px double var(--line);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.kop svg {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+.kop > span:last-child {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+}
+:root[data-world] [data-page="periksa"] .field {
+  background-color: var(--card);
+  background-image: repeating-linear-gradient(transparent 0 calc(1.6em - 1px), color-mix(in srgb, var(--ink) 14%, transparent) calc(1.6em - 1px) 1.6em);
+  background-origin: content-box;
+  background-attachment: local;
+}
+:root[data-world] [data-page="periksa"] .chip {
+  position: relative;
+  gap: 0.6rem;
+  padding: 0.35rem 0.6rem 0.35rem 0.4rem;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink);
+}
+:root[data-world] [data-page="periksa"] .chip::before {
+  content: "";
+  flex: none;
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 2px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+  transition: background-color 0.15s;
+}
+:root[data-world] [data-page="periksa"] .chip:hover {
+  background: var(--hl-bg);
+  transform: none;
+}
+:root[data-world] [data-page="periksa"] .chip[aria-pressed="true"]::before {
+  background: var(--ink);
+}
+:root[data-world] [data-page="periksa"] .chip svg {
+  position: absolute;
+  left: 0.5rem;
+  width: 1rem;
+  margin: 0;
+  color: var(--paper);
+}
+
+/* The tablet: an app on its screen. A status bar, the scammers as a chat list, a chat that fills the screen. */
+:root[data-world] [data-page="simulasi"] {
+  background: var(--card);
+}
+:root[data-world] [data-page="simulasi"] .tab-status {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  height: 2.1rem;
+  padding: 0 1.5rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+:root[data-world] [data-page="simulasi"] .tab-home {
+  display: block;
+  position: absolute;
+  z-index: 2;
+  bottom: 7px;
+  left: 50%;
+  width: 24%;
+  height: 5px;
+  translate: -50% 0;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--ink) 75%, transparent);
+  pointer-events: none;
+}
+:root[data-world] [data-page="simulasi"] > .lembar {
+  padding: 1rem 1.6rem 2.5rem;
+}
+:root[data-world] [data-page="simulasi"] h1 {
+  font-size: 2.4rem;
+}
+:root[data-world] [data-page="simulasi"] .hand {
+  font-size: 1.25rem;
+}
+:root[data-world] [data-page="simulasi"] h1 ~ p:not(.hand) {
+  margin-top: 0.75rem;
+  font-size: 1rem;
+}
+:root[data-world] [data-page="simulasi"] #lawan + div {
+  gap: 0;
+}
+:root[data-world] [data-page="simulasi"] .choice {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  column-gap: 0.8rem;
+  align-items: center;
+  padding: 0.7rem 0.5rem;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 22%, transparent);
+  border-radius: 10px;
+  background: none;
+  color: var(--ink);
+  box-shadow: none;
+}
+:root[data-world] [data-page="simulasi"] .choice::before {
+  content: attr(data-initial);
+  grid-row: span 2;
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+:root[data-world] [data-page="simulasi"] .choice > span {
+  grid-column: 2;
+}
+:root[data-world] [data-page="simulasi"] .choice:hover:not(:disabled),
+:root[data-world] [data-page="simulasi"] .choice[aria-pressed="true"] {
+  background: var(--hl-bg);
+  transform: none;
+  box-shadow: none;
+}
+:root[data-world] [data-page="simulasi"] .choice[aria-pressed="true"]::before {
+  border-color: #17181c;
+  background: var(--hl);
+  color: #17181c;
+}
+:root[data-world] [data-page="simulasi"] .border-dashed {
+  border: 0;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--hl) 16%, var(--card));
+  font-size: 0.92rem;
+}
+/* Full width of the screen, and tall enough that the whole conversation fits once it is scrolled to. */
+:root[data-world] [data-page="simulasi"] .chat {
+  margin-inline: -1.6rem;
+  border: 0;
+  border-block: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--grain) var(--paper);
+  box-shadow: none;
+}
+:root[data-world] [data-page="simulasi"] .chat.taped::before {
+  display: none;
+}
+:root[data-world] [data-page="simulasi"] .chat > :first-child,
+:root[data-world] [data-page="simulasi"] .chat > :last-child {
+  background: var(--card);
+}
+:root[data-world] [data-page="simulasi"] .chat-body {
+  height: max(18rem, calc(var(--page-h, 46rem) - 2.1rem - 16rem));
+}
+:root[data-world] [data-page="simulasi"] .chat .field {
+  border-radius: 999px;
+  padding-inline: 1.1rem;
+}
+:root[data-world] [data-page="simulasi"] .chat .btn-main {
+  border-radius: 999px;
+}
+
+/* The card: a flash card with a ruled frame and its suit in the corner. The question flips on the card itself. */
+:root[data-world] [data-page="latihan"] {
+  background: var(--grain) var(--card);
+}
+:root[data-world] [data-page="latihan"]::before {
+  content: "?";
+  position: absolute;
+  z-index: 1;
+  inset: 10px;
+  padding: 0.2rem 0.6rem;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  color: var(--danger);
+  font: 700 1.35rem/1.2 var(--font-hand);
+  pointer-events: none;
+}
+:root[data-world] [data-page="latihan"] > .lembar {
+  margin: 12px;
+}
+:root[data-world] [data-page="latihan"] .panel {
+  border-color: transparent;
+  background: none;
+  padding-inline: 0;
+}
+
+/* The folder: a sheet clipped inside it, with a margin line down the left. */
+:root[data-world] [data-page="bertindak"] {
+  background:
+    linear-gradient(90deg, transparent 1.4rem, color-mix(in srgb, var(--danger) 40%, transparent) 1.4rem calc(1.4rem + 1.5px), transparent 0),
+    var(--grain) var(--paper);
+}
+:root[data-world] [data-page="bertindak"]::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: -1.4rem;
+  left: 2.6rem;
+  width: 1.3rem;
+  height: 4.2rem;
+  rotate: -6deg;
+  background: color-mix(in srgb, var(--ink) 80%, transparent);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 84'%3E%3Cpath d='M9 26V10a5 5 0 0 1 10 0v58a8 8 0 0 1-16 0V16' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  pointer-events: none;
+}
+
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1010,9 +1183,6 @@ body {
     display: none;
   }
   .rise-in {
-    animation: none;
-  }
-  .lembar {
     animation: none;
   }
 }

@@ -14,7 +14,7 @@ export default function Home() {
         Mau buka <mark className="hl">berkas</mark> yang mana?
       </h1>
       <p className="mt-4 max-w-xl text-lg leading-relaxed text-muted">
-        Semuanya ada di meja ini. Klik salah satu, dan isi mejamu langsung berganti.
+        Semuanya ada di meja ini. Klik salah satu untuk membukanya.
       </p>
 
       <ul className="meja-links mt-8">

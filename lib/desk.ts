@@ -26,6 +26,18 @@ export function planeFromRect(
   };
 }
 
+/** Where an open page sits on screen: below the way back to the desk, and tablet-shaped (3:4) for the chat simulation. */
+export function pageRect(route: Route, viewW: number, viewH: number) {
+  const narrow = viewW < 768;
+  const side = narrow ? 20 : 24;
+  const top = 72; // room for the way back to the desk
+  const room = viewH - top - (narrow ? 40 : 72); // the page is seen leaning, so its near edge needs room to grow
+  const width = Math.min(route === "simulasi" ? Math.round(room * 0.75) : 680, viewW - side * 2);
+  // On a phone the tablet may stand a little taller than 3:4, so its page still gets most of the screen.
+  const height = Math.round(route === "simulasi" ? Math.min(room, width * 1.75) : room);
+  return { left: Math.round((viewW - width) / 2), top: top + Math.round((room - height) / 2), width, height };
+}
+
 export const easeOut = (t: number) => 1 - (1 - t) ** 3;
 
 /** Sorot's idle motion at time t seconds: a slow tail swish, a blink, and now and then a wave. */

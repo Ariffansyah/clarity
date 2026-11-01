@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Kalam, Plus_Jakarta_Sans } from "next/font/google";
-import Link from "next/link";
 import Lembar from "./lembar";
-import LogoMark from "./logo";
-import Nav from "./nav";
+import Tema from "./tema";
 import World from "./world";
 import "./globals.css";
 
@@ -28,19 +26,22 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="id" className={`${jakarta.variable} ${kalam.variable} antialiased`}>
+    // The script sets data-theme before React hydrates, so React must accept the DOM's value.
+    <html lang="id" className={`${jakarta.variable} ${kalam.variable} antialiased`} suppressHydrationWarning>
+      <head>
+        {/* Before first paint, so a saved dark theme never flashes light. Follows the system until a choice is made. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var d=document.documentElement,m=matchMedia("(prefers-color-scheme: dark)");function f(){var t;try{t=localStorage.getItem("tema")}catch(e){}d.dataset.theme=t==="dark"||t==="light"?t:m.matches?"dark":"light"}f();m.addEventListener("change",f)})()`,
+          }}
+        />
+      </head>
       <body>
         <World />
+        <Tema />
         <a href="#isi" className="skip">
           Langsung ke isi
         </a>
-        <header className="world-top mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 pt-5 sm:px-6">
-          <Link href="/" className="logo flex min-h-11 items-center gap-2 text-2xl font-extrabold tracking-tight">
-            <LogoMark className="h-9 w-9" />
-            Clarity
-          </Link>
-          <Nav />
-        </header>
         <Lembar>{children}</Lembar>
       </body>
     </html>
