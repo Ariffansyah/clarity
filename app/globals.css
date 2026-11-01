@@ -1153,6 +1153,29 @@ html:has(.pm[open]) {
 .pm-body > :first-child {
   margin-top: 0;
 }
+.pm-size {
+  width: 44px;
+  padding-inline: 0;
+}
+/* Full screen drops the drawn phone, but the content keeps a readable line length. */
+html:has(.pm[data-full="true"]) {
+  scrollbar-gutter: auto; /* nothing behind is visible to jump, and the gutter would leave a strip of backdrop */
+}
+.pm[data-full="true"] {
+  width: 100vw;
+  height: 100dvh;
+}
+.pm[data-full="true"] .pm-phone {
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.pm[data-full="true"] .pm-screen {
+  border-radius: 0;
+}
+.pm[data-full="true"] .pm-body {
+  padding-inline: max(1rem, calc(50% - 30rem));
+}
 /* On a real phone a drawn phone would only waste room: the sheet fills the screen. */
 @media (max-width: 520px) {
   .pm {
@@ -1166,6 +1189,9 @@ html:has(.pm[open]) {
   }
   .pm-screen {
     border-radius: 0;
+  }
+  .pm-size {
+    display: none;
   }
 }
 
