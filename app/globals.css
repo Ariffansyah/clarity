@@ -745,455 +745,150 @@ body {
   background: var(--hl-bg);
 }
 
-/* ---------- Home: a desk with a stack of files, one sticky-note divider per tool ---------- */
+/* ---------- The desk world: one 3D desk behind every page ---------- */
 
-/* --u is one design pixel, so the scene scales as one object. Phones get their own narrower layout. */
-.desk-stage {
-  --w: 1060;
-  --desk-w: 920; /* the near edge grows with perspective, so this is what fits the page */
-  --tilt: 36deg;
-  --stack-x: 290;
-  --stack-y: 110;
-  --stack-w: 330;
-  --tab-w: 230;
-  --desk-h: 650;
-  --sorot-x: 70;
-  --sorot-y: 290;
-  --sorot-w: 170;
-  --u: calc(min(100cqw, 1060px) / var(--w));
-  --thick: calc(34 * var(--u));
-  height: calc(660 * var(--u));
-  margin-top: 1.5rem;
-  perspective: calc(2800 * var(--u));
-  perspective-origin: 50% 35%;
-  overflow-x: clip;
+/* clip, not hidden: hidden can still be scrolled by script, and a sheet sliding in would drag the page with it. */
+html,
+body {
+  overflow: clip;
 }
-@container (max-width: 640px) {
-  .desk-stage {
-    --w: 440;
-    --desk-w: 386;
-    --tilt: 30deg;
-    --stack-x: 12;
-    --stack-y: 190;
-    --stack-w: 142;
-    --tab-w: 192;
-    --desk-h: 660;
-    --sorot-x: 24;
-    --sorot-y: 18;
-    --sorot-w: 86;
-    height: calc(690 * var(--u));
-  }
-  .desk-only {
-    display: none;
-  }
-  .sheet {
-    padding: calc(20 * var(--u)) calc(14 * var(--u));
-  }
+body {
+  display: flex;
+  height: 100dvh;
+  flex-direction: column;
 }
-.desk {
-  position: relative;
-  width: calc(var(--desk-w) * var(--u));
-  height: calc(var(--desk-h) * var(--u));
-  margin-inline: auto;
-  border: 2px solid var(--line);
-  border-radius: calc(18 * var(--u));
-  background:
-    var(--grain),
-    repeating-linear-gradient(92deg, transparent 0 46px, rgb(0 0 0 / 0.045) 46px 48px),
-    color-mix(in srgb, var(--warn) 20%, var(--card));
-  pointer-events: none; /* the desk's flat box must not catch clicks meant for what sits on it */
-  transform-style: preserve-3d;
-  transform-origin: 50% 0;
-  transform: rotateX(var(--tilt)) rotateZ(-1.5deg);
-}
-.desk-edge {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  height: calc(30 * var(--u));
-  border: 2px solid var(--line);
-  background: color-mix(in srgb, var(--warn) 42%, var(--card));
-  transform-origin: 50% 0;
-  transform: rotateX(-90deg);
-}
-
-/* Lying flat on the desk */
-.desk-ring {
-  position: absolute;
-  left: calc(400 * var(--u));
-  top: calc(530 * var(--u));
-  width: calc(90 * var(--u));
-  height: calc(90 * var(--u));
-  border: calc(7 * var(--u)) solid color-mix(in srgb, var(--warn) 45%, transparent);
-  border-radius: 50%;
-  rotate: 20deg;
-}
-.desk-pen {
-  position: absolute;
-  left: calc(60 * var(--u));
-  top: calc(570 * var(--u));
-  width: calc(210 * var(--u));
-  height: calc(26 * var(--u));
-  border: 2px solid #17181c;
-  border-radius: 6px 13px 13px 6px;
-  background: linear-gradient(90deg, #17181c 0 22%, var(--hl) 22%);
-  box-shadow: 3px 4px 0 var(--shadow);
-  rotate: -9deg;
-  transform: translateZ(2px);
-}
-.desk-note {
-  position: absolute;
-  font-size: max(15px, calc(25 * var(--u)));
-  transform: translateZ(1px);
-}
-.desk-hint {
-  left: calc(40 * var(--u));
-  top: calc(120 * var(--u));
-  width: calc(230 * var(--u));
-}
-.desk-urgent {
-  left: calc((var(--stack-x) + var(--stack-w) - 90) * var(--u));
-  top: calc((var(--stack-y) + 395) * var(--u));
-  white-space: nowrap;
-}
-@container (max-width: 640px) {
-  .desk-hint {
-    left: calc(112 * var(--u));
-    top: calc(36 * var(--u));
-    width: calc(262 * var(--u));
-  }
-  .desk-urgent {
-    left: calc(30 * var(--u));
-    top: calc(590 * var(--u));
-  }
-}
-
-/* Sorot stands up from the desk, so it cancels the desk's tilt. */
-.desk-sorot {
-  position: absolute;
-  left: calc(var(--sorot-x) * var(--u));
-  top: calc(var(--sorot-y) * var(--u));
-  width: calc(var(--sorot-w) * var(--u));
-  transform-origin: 50% 100%;
-  transform: rotateZ(1.5deg) rotateX(calc(-1 * var(--tilt)));
-}
-
-/* Each bundle of paper is one link: its sheets, its edges and its sticky note. */
-.files,
-.files li {
-  position: absolute;
+.world {
+  position: fixed;
   inset: 0;
-  transform-style: preserve-3d;
-}
-.files {
-  --c: var(--card);
-  --t: var(--ink);
-  --edge: var(--line);
-}
-.file-cek {
-  --l: 3;
-  --jx: 0;
-  --jy: 0;
-  --ty: 12;
-  --r: -1.5deg;
-  --th: 72;
-}
-.file-latihan {
-  --l: 2;
-  --jx: 7;
-  --jy: 5;
-  --ty: 92;
-  --r: 1.2deg;
-  --th: 72;
-  --c: color-mix(in srgb, var(--good) 30%, var(--card));
-}
-.file-simulasi {
-  --l: 1;
-  --jx: -6;
-  --jy: 9;
-  --ty: 172;
-  --r: -1deg;
-  --th: 72;
-  --c: color-mix(in srgb, var(--warn) 34%, var(--card));
-}
-/* Yellow is kept for the visitor in a hurry: the nearest, largest and only saturated note. */
-.file-terlanjur {
-  --l: 0;
-  --jx: 4;
-  --jy: 13;
-  --ty: 252;
-  --r: 1.5deg;
-  --th: 96;
-  --tab-extra: 22;
-  --c: var(--hl);
-  --t: #17181c;
-  --edge: #17181c;
-}
-
-.file {
-  position: absolute;
-  left: calc((var(--stack-x) + var(--jx)) * var(--u));
-  top: calc((var(--stack-y) + var(--jy)) * var(--u));
   display: block;
-  width: calc(var(--stack-w) * var(--u));
-  height: calc(360 * var(--u));
-  background: #fbf9f3;
-  color: #17181c;
-  box-shadow: inset 0 0 0 2px var(--line);
-  pointer-events: auto;
-  cursor: pointer;
-  transform-style: preserve-3d;
-  transform: translateZ(calc((var(--l) + 1) * var(--thick)));
-}
-.file:focus-visible {
-  outline: none;
-}
-.file-edge {
-  position: absolute;
-  background: repeating-linear-gradient(0deg, #fbf9f3 0 3px, #b9b5a8 3px 4px);
-  box-shadow: inset 0 0 0 1.5px var(--line);
-}
-/* A strip of the note's colour runs through the pages, so each section shows from the side too. */
-.file-edge::after {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  height: 34%;
-  background: var(--c);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-.file-front {
-  left: 0;
-  top: 100%;
   width: 100%;
-  height: var(--thick);
-  transform-origin: 50% 0;
-  transform: rotateX(-90deg);
-}
-.file-side {
-  top: 0;
-  left: 100%;
-  width: var(--thick);
   height: 100%;
-  background: repeating-linear-gradient(90deg, #fbf9f3 0 3px, #b9b5a8 3px 4px);
-  transform-origin: 0 50%;
-  transform: rotateY(90deg);
 }
-.file-side::after {
-  inset-inline: auto 0;
-  inset-block: 0;
-  width: 34%;
-  height: auto;
+:root:not([data-world]) .world {
+  visibility: hidden;
 }
-
-.file-tab {
-  position: absolute;
-  left: 100%;
-  top: calc(var(--ty) * var(--u));
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  width: calc((var(--tab-w) + var(--tab-extra, 0)) * var(--u));
-  height: calc(var(--th) * var(--u));
-  min-height: 52px;
-  padding-inline: calc(24 * var(--u)) calc(10 * var(--u));
-  border: 2px solid var(--edge);
-  border-left-width: 0;
-  border-radius: 0 10px 10px 0;
-  background: var(--c);
-  color: var(--t);
-  box-shadow: 3px 3px 0 var(--shadow);
-  line-height: 1.15;
-  rotate: var(--r);
-  transform-origin: 0 50%;
-  transition:
-    translate 0.2s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.file:hover .file-tab,
-.file:focus-visible .file-tab {
-  translate: calc(14 * var(--u)) 0;
-  box-shadow: 6px 6px 0 var(--shadow);
-}
-.file:active .file-tab {
-  translate: 0 0;
-  box-shadow: 1px 1px 0 var(--shadow);
-}
-.file:focus-visible .file-tab {
-  outline: 3px solid var(--ink);
-  outline-offset: 3px;
-}
-.file-title {
-  font-size: max(15px, calc(21 * var(--u)));
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-}
-.file-terlanjur .file-title {
-  font-size: max(16px, calc(26 * var(--u)));
-}
-.file-sub {
-  margin-top: 0.15em;
-  font-size: max(12px, calc(15 * var(--u)));
-  font-weight: 600;
-  opacity: 0.85;
-}
-
-/* The top sheet: a document somebody has already been marking up. */
-.sheet {
-  position: absolute;
-  inset: 0;
-  display: block;
-  padding: calc(30 * var(--u)) calc(30 * var(--u));
-}
-.sheet-head {
-  display: block;
-  font-size: max(15px, calc(30 * var(--u)));
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-}
-.sheet-lines {
-  display: block;
-  margin-top: calc(26 * var(--u));
-}
-.sheet-lines i {
-  display: block;
-  height: calc(11 * var(--u));
-  margin-top: calc(15 * var(--u));
-  border-radius: 99px;
-  background: #d5d1c4;
-}
-.sheet-lines i:nth-child(2) {
-  width: 70%;
-  background: #ffd84a;
-}
-.sheet-lines i:nth-child(3) {
-  width: 88%;
-}
-.sheet-lines i:nth-child(4) {
-  width: 52%;
-}
-
-@container (max-width: 640px) {
-  .file-terlanjur .file-title {
-    font-size: max(15px, calc(20 * var(--u)));
-  }
-  .sheet-head {
-    font-size: max(14px, calc(20 * var(--u)));
-  }
-}
-
-/* ---------- Phone pop-up: every tool opens inside this ---------- */
-
-html:has(.pm[open]) {
-  overflow: hidden;
-  scrollbar-gutter: stable; /* so the desk does not jump sideways when the scrollbar goes */
-}
-.pm {
-  width: min(400px, 100vw - 2rem);
-  height: min(820px, 100dvh - 2rem);
-  max-width: none;
-  max-height: none;
-  margin: auto;
-  padding: 0;
-  overflow: visible;
-  border: 0;
-  background: none;
-  color: var(--ink);
-}
-.pm[open] {
-  animation: pm-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.pm::backdrop {
-  background: rgb(23 24 28 / 0.55);
-}
-@keyframes pm-in {
-  from {
-    opacity: 0;
-    transform: perspective(1200px) rotateX(28deg) translateY(90px) scale(0.86);
-  }
-}
-.pm-phone {
-  height: 100%;
-  box-shadow: 10px 12px 0 var(--hl);
-  animation: none;
-}
-.pm-screen {
-  display: flex;
-  height: 100%;
-  min-height: 0;
-  flex-direction: column;
-}
-.pm-bar {
-  display: flex;
+.world-top {
+  position: relative;
+  z-index: 10;
   flex: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 1.1rem 0.9rem 0.7rem 1.1rem;
-  border-bottom: 2px solid var(--line);
 }
-.pm-close {
-  flex: none;
-  padding-block: 0.4rem;
-  box-shadow: 2px 2px 0 var(--shadow);
-}
-.pm-body {
+
+/* The sheet of paper a page lives on. It scrolls by itself; the desk stays put. */
+.lembar-wrap {
+  position: relative;
+  z-index: 10;
   flex: 1;
   min-height: 0;
+  width: min(860px, 100% - 2.5rem);
+  margin: 1.5rem auto 1.75rem;
+}
+.lembar {
+  height: 100%;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  padding: 1rem 1rem 1.5rem;
+  scroll-padding-top: 2rem; /* so jumping to a page's first heading keeps the margin above it */
+  padding: 2rem clamp(1.1rem, 4vw, 2.5rem) 3rem;
   background: var(--grain) var(--paper);
+  animation: lembar-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.pm-body > :first-child {
-  margin-top: 0;
+.lembar:focus-visible {
+  outline-offset: -4px;
 }
-.pm-size {
+@keyframes lembar-in {
+  from {
+    transform: translateY(100dvh);
+  }
+}
+.lembar-size {
+  position: absolute;
+  top: -1.5rem;
+  right: 0.75rem;
   width: 44px;
   padding-inline: 0;
+  box-shadow: 2px 2px 0 var(--shadow);
 }
-/* Full screen drops the drawn phone, but the content keeps a readable line length. */
-html:has(.pm[data-full="true"]) {
-  scrollbar-gutter: auto; /* nothing behind is visible to jump, and the gutter would leave a strip of backdrop */
-}
-.pm[data-full="true"] {
-  width: 100vw;
-  height: 100dvh;
-}
-.pm[data-full="true"] .pm-phone {
-  padding: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-.pm[data-full="true"] .pm-screen {
-  border-radius: 0;
-}
-.pm[data-full="true"] .pm-body {
-  padding-inline: max(1rem, calc(50% - 30rem));
-}
-/* On a real phone a drawn phone would only waste room: the sheet fills the screen. */
-@media (max-width: 520px) {
-  .pm {
-    width: 100vw;
-    height: 100dvh;
+@media (min-width: 1000px) {
+  .lembar-wrap:not([data-full="true"]) .lembar-size {
+    top: 0;
+    right: -4.25rem;
   }
-  .pm-phone {
-    padding: 0;
-    border-radius: 0;
-    box-shadow: none;
+}
+.lembar-wrap[data-full="true"] {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  width: 100%;
+  margin: 0;
+}
+.lembar-wrap[data-full="true"] .lembar {
+  padding-top: 4rem;
+  padding-inline: max(1.25rem, calc(50% - 30rem));
+  animation: none;
+}
+.lembar-wrap[data-full="true"] .lembar-size {
+  top: 0.75rem;
+  right: 1.25rem;
+}
+/* Phones: leave a strip of desk showing above the page, and room for the bottom tab bar. */
+@media (max-width: 767px) {
+  .lembar-wrap {
+    width: calc(100% - 1.5rem);
+    margin: 6rem auto calc(5.25rem + env(safe-area-inset-bottom));
   }
-  .pm-screen {
-    border-radius: 0;
-  }
-  .pm-size {
+  .lembar-size {
     display: none;
   }
 }
+/* Without WebGL there is no desk behind it: a plain bordered page. */
+:root:not([data-world]) .lembar {
+  border: 2px solid var(--line);
+}
+
+/* Home has no sheet: you see the desk itself, with the labels pinned to the things on it. */
+.lembar-wrap[data-page="home"] {
+  width: min(1152px, 100% - 2rem);
+  margin-top: 1.5rem;
+  pointer-events: none; /* clicks through to the things on the desk */
+}
+:root .lembar-wrap[data-page="home"] .lembar {
+  overflow: visible;
+  padding: 0 0.5rem;
+  border: 0;
+  background: none;
+  animation: none;
+}
+.meja-links {
+  display: grid;
+  gap: 0.75rem;
+  pointer-events: auto;
+}
+.meja-sorot {
+  display: none;
+}
+:root[data-world] .meja-link {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: max-content;
+  max-width: 44vw;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  text-align: center;
+  transform: translate(calc(var(--x, -999px) - 50%), var(--y, -999px));
+  transition: box-shadow 0.16s, background-color 0.2s;
+  pointer-events: auto;
+}
+:root[data-world] .meja-sorot {
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: block;
+  width: clamp(64px, 9vw, 120px);
+  transform: translate(calc(var(--x, -999px) - 50%), calc(var(--y, -999px) - 100%));
+}
+
 
 /* ---------- Tape: cards pinned to the page like a scrapbook ---------- */
 .taped {
@@ -1370,6 +1065,9 @@ html:has(.pm[data-full="true"]) {
     display: none;
   }
   .rise-in {
+    animation: none;
+  }
+  .lembar {
     animation: none;
   }
 }
