@@ -339,6 +339,15 @@ body {
 .flip[data-flipped="true"] .flip-inner {
   transform: rotateY(180deg);
 }
+/* The side facing away is hidden the moment the card turns edge-on, 120ms into the eased flip. Not left to
+   backface-visibility alone: Firefox draws both sides when the card is on a page laid out in 3D. */
+.flip-inner > * {
+  transition: visibility 0s 0.12s;
+}
+.flip[data-flipped="true"] .flip-inner > :not(.flip-back),
+.flip:not([data-flipped="true"]) .flip-back {
+  visibility: hidden;
+}
 
 .bubble {
   max-width: 34rem;
@@ -1060,5 +1069,8 @@ body {
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation: none !important;
+  }
+  .flip-inner > * {
+    transition: none;
   }
 }
