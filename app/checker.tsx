@@ -84,7 +84,7 @@ const ACT: Record<string, string> = {
   pinjol: "data",
 };
 
-export default function Checker({ aiReady }: { aiReady: boolean }) {
+export default function Checker({ aiReady, compact }: { aiReady: boolean; compact?: boolean }) {
   const [text, setText] = useState("");
   const [ctx, setCtx] = useState<string[]>([]);
   const [state, setState] = useState<State>({ status: "idle" });
@@ -111,7 +111,7 @@ export default function Checker({ aiReady }: { aiReady: boolean }) {
     // The panel shrinks to the loader, so bring it back into view if its top went off screen.
     requestAnimationFrame(() => {
       const el = panel.current;
-      if (el && (window.innerWidth < 1024 || el.getBoundingClientRect().top < 0)) {
+      if (el && (window.innerWidth < 1024 || el.closest("dialog") || el.getBoundingClientRect().top < 0)) {
         el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
       }
     });
@@ -139,15 +139,15 @@ export default function Checker({ aiReady }: { aiReady: boolean }) {
   const loading = state.status === "loading";
 
   return (
-    <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-14">
-      <div className="lg:sticky lg:top-6">
-        <div className="flex items-end justify-between gap-4">
-          <h1 className="text-[2.6rem] leading-[1.02] font-extrabold tracking-[-0.035em] text-balance sm:text-6xl">
+    <div className="grid items-start gap-10 @min-[976px]:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] @min-[976px]:gap-14">
+      <div className="@min-[976px]:sticky @min-[976px]:top-6">
+        {!compact && <div className="flex items-end justify-between gap-4">
+          <h1 className="text-[2.6rem] leading-[1.02] font-extrabold tracking-[-0.035em] text-balance @min-[592px]:text-6xl">
             <mark className="hl">Ragu</mark> sama pesan ini?
           </h1>
-          <Mascot className="w-16 shrink-0 sm:w-24" />
-        </div>
-        <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
+          <Mascot className="w-16 shrink-0 @min-[592px]:w-24" />
+        </div>}
+        <p className={compact ? "max-w-xl leading-relaxed text-muted" : "mt-5 max-w-xl text-lg leading-relaxed text-muted"}>
           Tempel chat, SMS, email, atau tautan yang bikin kamu curiga. Clarity menandai bagian yang patut dicurigai dan
           menjelaskan alasannya, supaya kamu bisa memutuskan dengan kepala dingin.
         </p>
@@ -235,16 +235,15 @@ export default function Checker({ aiReady }: { aiReady: boolean }) {
         </form>
       </div>
 
-      <section ref={panel} aria-labelledby="hasil" aria-busy={loading} className={state.status === "idle" ? "scroll-mt-4" : "panel scroll-mt-4 p-5 sm:p-7"}>
+      <section ref={panel} aria-labelledby="hasil" aria-busy={loading} className={state.status === "idle" ? "scroll-mt-4" : "panel scroll-mt-4 p-5 @min-[592px]:p-7"}>
         {state.status === "idle" && (
           <div className="enter">
             <h2 id="hasil" className="sr-only">
               Belum ada yang diperiksa
             </h2>
-            <Phone />
+            {!compact && <Phone />}
             <p className="mx-auto mt-2 max-w-md text-center leading-relaxed text-muted">
-              Begini hasilnya nanti: bagian yang mencurigakan ditandai, lalu dijelaskan satu per satu. Belum punya pesan?
-              Coba contoh fiktif ini.
+              {compact ? "Belum punya pesan? Coba contoh fiktif ini." : "Begini hasilnya nanti: bagian yang mencurigakan ditandai, lalu dijelaskan satu per satu. Belum punya pesan? Coba contoh fiktif ini."}
             </p>
             <div className="mt-5 flex flex-wrap justify-center gap-3">
               {SAMPLES.map((s, i) => (
@@ -347,7 +346,7 @@ function Report({
     <div className="reveal space-y-8">
       <div style={{ "--i": i++ } as React.CSSProperties}>
         <p className="text-sm font-semibold text-muted">Hasil pemeriksaan</p>
-        <h2 id="hasil" className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl" style={{ color: level.color }}>
+        <h2 id="hasil" className="mt-1 text-3xl font-extrabold tracking-tight @min-[592px]:text-4xl" style={{ color: level.color }}>
           {level.name}
         </h2>
         <div className="meter mt-4 max-w-xs" role="img" aria-label={`Tingkat ${result.level} dari 3`}>

@@ -58,8 +58,8 @@ export default function Trainer() {
           ? "Sudah bagus. Perhatikan lagi situasi yang masih meleset di bawah."
           : "Tidak apa-apa, justru ini gunanya latihan. Baca lagi tanda-tanda di situasi yang meleset, lalu coba sekali lagi.";
     return (
-      <section className="panel enter p-5 sm:p-8" aria-labelledby="skor">
-        <h2 id="skor" ref={front} tabIndex={-1} className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+      <section className="panel enter p-5 @min-[592px]:p-8" aria-labelledby="skor">
+        <h2 id="skor" ref={front} tabIndex={-1} className="text-3xl font-extrabold tracking-tight @min-[592px]:text-4xl">
           Kamu tepat di{" "}
           <mark className="hl">
             {score} dari {total}
@@ -69,7 +69,7 @@ export default function Trainer() {
         <p className="mt-3 max-w-2xl text-lg leading-relaxed text-muted">{verdict}</p>
         <ul className="mt-8 divide-y-2 divide-line border-y-2 border-line">
           {rows.map(({ s, grade }) => (
-            <li key={s.id} className="flex flex-col gap-1 py-4 sm:flex-row sm:items-baseline sm:gap-6">
+            <li key={s.id} className="flex flex-col gap-1 py-4 @min-[592px]:flex-row @min-[592px]:items-baseline @min-[592px]:gap-6">
               <span className="w-32 flex-none font-bold" style={{ color: VERDICT[grade].color }}>
                 {VERDICT[grade].title}
               </span>
@@ -111,7 +111,7 @@ export default function Trainer() {
             if (e.target === e.currentTarget && !flipped) setReveal(null);
           }}
         >
-          <section className="panel p-5 sm:p-8" inert={flipped} aria-labelledby="situasi">
+          <section className="panel p-5 @min-[592px]:p-8" inert={flipped} aria-labelledby="situasi">
             <p className="text-sm font-semibold text-muted">Situasinya</p>
             <h2 id="situasi" ref={front} tabIndex={-1} className="mt-1 text-xl leading-snug font-bold text-balance">
               {scenario.context}
@@ -127,7 +127,7 @@ export default function Trainer() {
             </div>
           </section>
 
-          <section className="panel flip-back p-5 sm:p-8" inert={!flipped} aria-labelledby="umpan-balik">
+          <section className="panel flip-back p-5 @min-[592px]:p-8" inert={!flipped} aria-labelledby="umpan-balik">
             {reveal && <Answer {...reveal} heading={back} onNext={next} last={step === total - 1} />}
           </section>
         </div>

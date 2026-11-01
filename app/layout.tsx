@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     "Periksa pesan, tautan, dan tawaran yang mencurigakan, berlatih mengenali penipuan, dan tahu langkah yang harus diambil kalau sudah terlanjur.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children, modal }: LayoutProps<"/">) {
   return (
     <html lang="id" className={`${jakarta.variable} ${kalam.variable} antialiased`}>
       <body className="min-h-dvh">
@@ -40,10 +40,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Nav />
         </header>
         <ViewTransition>
-          <main id="isi" className="mx-auto w-full max-w-6xl px-4 pt-10 pb-32 sm:px-6 sm:pt-14 md:pb-24">
+          <main id="isi" className="@container mx-auto w-full max-w-6xl px-4 pt-10 pb-32 sm:px-6 sm:pt-14 md:pb-24">
             {children}
           </main>
         </ViewTransition>
+        {modal}
       </body>
     </html>
   );

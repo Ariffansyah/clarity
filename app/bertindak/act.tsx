@@ -30,7 +30,7 @@ export function Guide() {
     history.replaceState(null, "", `#${id}`);
     window.dispatchEvent(new HashChangeEvent("hashchange"));
     requestAnimationFrame(() => {
-      if (window.innerWidth < 1024) list.current?.scrollIntoView({ block: "start" });
+      if (window.innerWidth < 1024 || list.current?.closest("dialog")) list.current?.scrollIntoView({ block: "start" });
       list.current?.focus({ preventScroll: true });
     });
   }
@@ -45,10 +45,10 @@ export function Guide() {
   const count = current ? current.steps.filter((_, i) => done.has(`${current.id}:${i}`)).length : 0;
 
   return (
-    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-12">
-      <div className="lg:sticky lg:top-6">
+    <div className="grid items-start gap-8 @min-[976px]:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] @min-[976px]:gap-12">
+      <div className="@min-[976px]:sticky @min-[976px]:top-6">
         <h2 className="font-bold">Apa yang terjadi?</h2>
-        <div className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-1">
+        <div className="mt-3 grid gap-2.5 @min-[592px]:grid-cols-2 @min-[976px]:grid-cols-1">
           {SITUATIONS.map((s) => (
             <button
               key={s.id}
@@ -65,8 +65,8 @@ export function Guide() {
 
       <div ref={list} tabIndex={-1} className="scroll-mt-4 outline-none">
         {current ? (
-          <section key={current.id} className="panel taped enter p-5 sm:p-8" aria-labelledby="langkah">
-            <h2 id="langkah" className="text-2xl leading-tight font-extrabold tracking-tight text-balance sm:text-3xl">
+          <section key={current.id} className="panel taped enter p-5 @min-[592px]:p-8" aria-labelledby="langkah">
+            <h2 id="langkah" className="text-2xl leading-tight font-extrabold tracking-tight text-balance @min-[592px]:text-3xl">
               {current.title}
             </h2>
             <div className="mt-4 flex items-center gap-4">
@@ -160,7 +160,7 @@ export function Composer() {
   const empty = !text.trim();
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+    <div className="grid gap-8 @min-[976px]:grid-cols-2 @min-[976px]:gap-12">
       <div>
         <fieldset>
           <legend className="font-bold">Modus apa yang mau kamu ceritakan?</legend>
@@ -213,7 +213,7 @@ export function Channels() {
   return (
     <ul className="divide-y-2 divide-line border-y-2 border-line">
       {CHANNELS.map((c) => (
-        <li key={c.name} className="grid gap-1 py-5 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-6">
+        <li key={c.name} className="grid gap-1 py-5 @min-[592px]:grid-cols-[1fr_auto] @min-[592px]:items-center @min-[592px]:gap-6">
           <div>
             <p className="font-bold">{c.name}</p>
             <p className="mt-0.5 leading-relaxed text-muted">{c.use}</p>
@@ -222,7 +222,7 @@ export function Channels() {
             href={c.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center justify-self-start rounded-md px-1 font-bold underline decoration-2 underline-offset-4 transition-colors hover:bg-[var(--hl-bg)] sm:justify-self-end"
+            className="inline-flex min-h-11 items-center justify-self-start rounded-md px-1 font-bold underline decoration-2 underline-offset-4 transition-colors hover:bg-[var(--hl-bg)] @min-[592px]:justify-self-end"
           >
             {c.label}
           </a>

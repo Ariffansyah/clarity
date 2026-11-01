@@ -745,130 +745,428 @@ body {
   background: var(--hl-bg);
 }
 
-/* ---------- Home: doors to the other two tools ---------- */
+/* ---------- Home: a desk with a stack of files, one sticky-note divider per tool ---------- */
 
-.tool {
-  display: grid;
-  align-content: space-between;
-  gap: 2rem;
-  padding: 1.75rem;
+/* --u is one design pixel, so the scene scales as one object. Phones get their own narrower layout. */
+.desk-stage {
+  --w: 1060;
+  --desk-w: 920; /* the near edge grows with perspective, so this is what fits the page */
+  --tilt: 36deg;
+  --stack-x: 290;
+  --stack-y: 110;
+  --stack-w: 330;
+  --tab-w: 230;
+  --desk-h: 650;
+  --sorot-x: 70;
+  --sorot-y: 290;
+  --sorot-w: 170;
+  --u: calc(min(100cqw, 1060px) / var(--w));
+  --thick: calc(34 * var(--u));
+  height: calc(660 * var(--u));
+  margin-top: 1.5rem;
+  perspective: calc(2800 * var(--u));
+  perspective-origin: 50% 35%;
+  overflow-x: clip;
+}
+@container (max-width: 640px) {
+  .desk-stage {
+    --w: 440;
+    --desk-w: 386;
+    --tilt: 30deg;
+    --stack-x: 12;
+    --stack-y: 190;
+    --stack-w: 142;
+    --tab-w: 192;
+    --desk-h: 660;
+    --sorot-x: 24;
+    --sorot-y: 18;
+    --sorot-w: 86;
+    height: calc(690 * var(--u));
+  }
+  .desk-only {
+    display: none;
+  }
+  .sheet {
+    padding: calc(20 * var(--u)) calc(14 * var(--u));
+  }
+}
+.desk {
+  position: relative;
+  width: calc(var(--desk-w) * var(--u));
+  height: calc(var(--desk-h) * var(--u));
+  margin-inline: auto;
   border: 2px solid var(--line);
-  border-radius: 22px;
-  overflow: hidden;
-  box-shadow: 4px 4px 0 var(--shadow);
+  border-radius: calc(18 * var(--u));
+  background:
+    var(--grain),
+    repeating-linear-gradient(92deg, transparent 0 46px, rgb(0 0 0 / 0.045) 46px 48px),
+    color-mix(in srgb, var(--warn) 20%, var(--card));
+  pointer-events: none; /* the desk's flat box must not catch clicks meant for what sits on it */
+  transform-style: preserve-3d;
+  transform-origin: 50% 0;
+  transform: rotateX(var(--tilt)) rotateZ(-1.5deg);
+}
+.desk-edge {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: calc(30 * var(--u));
+  border: 2px solid var(--line);
+  background: color-mix(in srgb, var(--warn) 42%, var(--card));
+  transform-origin: 50% 0;
+  transform: rotateX(-90deg);
+}
+
+/* Lying flat on the desk */
+.desk-ring {
+  position: absolute;
+  left: calc(400 * var(--u));
+  top: calc(530 * var(--u));
+  width: calc(90 * var(--u));
+  height: calc(90 * var(--u));
+  border: calc(7 * var(--u)) solid color-mix(in srgb, var(--warn) 45%, transparent);
+  border-radius: 50%;
+  rotate: 20deg;
+}
+.desk-pen {
+  position: absolute;
+  left: calc(60 * var(--u));
+  top: calc(570 * var(--u));
+  width: calc(210 * var(--u));
+  height: calc(26 * var(--u));
+  border: 2px solid #17181c;
+  border-radius: 6px 13px 13px 6px;
+  background: linear-gradient(90deg, #17181c 0 22%, var(--hl) 22%);
+  box-shadow: 3px 4px 0 var(--shadow);
+  rotate: -9deg;
+  transform: translateZ(2px);
+}
+.desk-note {
+  position: absolute;
+  font-size: max(15px, calc(25 * var(--u)));
+  transform: translateZ(1px);
+}
+.desk-hint {
+  left: calc(40 * var(--u));
+  top: calc(120 * var(--u));
+  width: calc(230 * var(--u));
+}
+.desk-urgent {
+  left: calc((var(--stack-x) + var(--stack-w) - 90) * var(--u));
+  top: calc((var(--stack-y) + 395) * var(--u));
+  white-space: nowrap;
+}
+@container (max-width: 640px) {
+  .desk-hint {
+    left: calc(112 * var(--u));
+    top: calc(36 * var(--u));
+    width: calc(262 * var(--u));
+  }
+  .desk-urgent {
+    left: calc(30 * var(--u));
+    top: calc(590 * var(--u));
+  }
+}
+
+/* Sorot stands up from the desk, so it cancels the desk's tilt. */
+.desk-sorot {
+  position: absolute;
+  left: calc(var(--sorot-x) * var(--u));
+  top: calc(var(--sorot-y) * var(--u));
+  width: calc(var(--sorot-w) * var(--u));
+  transform-origin: 50% 100%;
+  transform: rotateZ(1.5deg) rotateX(calc(-1 * var(--tilt)));
+}
+
+/* Each bundle of paper is one link: its sheets, its edges and its sticky note. */
+.files,
+.files li {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.files {
+  --c: var(--card);
+  --t: var(--ink);
+  --edge: var(--line);
+}
+.file-cek {
+  --l: 3;
+  --jx: 0;
+  --jy: 0;
+  --ty: 12;
+  --r: -1.5deg;
+  --th: 72;
+}
+.file-latihan {
+  --l: 2;
+  --jx: 7;
+  --jy: 5;
+  --ty: 92;
+  --r: 1.2deg;
+  --th: 72;
+  --c: color-mix(in srgb, var(--good) 30%, var(--card));
+}
+.file-simulasi {
+  --l: 1;
+  --jx: -6;
+  --jy: 9;
+  --ty: 172;
+  --r: -1deg;
+  --th: 72;
+  --c: color-mix(in srgb, var(--warn) 34%, var(--card));
+}
+/* Yellow is kept for the visitor in a hurry: the nearest, largest and only saturated note. */
+.file-terlanjur {
+  --l: 0;
+  --jx: 4;
+  --jy: 13;
+  --ty: 252;
+  --r: 1.5deg;
+  --th: 96;
+  --tab-extra: 22;
+  --c: var(--hl);
+  --t: #17181c;
+  --edge: #17181c;
+}
+
+.file {
+  position: absolute;
+  left: calc((var(--stack-x) + var(--jx)) * var(--u));
+  top: calc((var(--stack-y) + var(--jy)) * var(--u));
+  display: block;
+  width: calc(var(--stack-w) * var(--u));
+  height: calc(360 * var(--u));
+  background: #fbf9f3;
+  color: #17181c;
+  box-shadow: inset 0 0 0 2px var(--line);
+  pointer-events: auto;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transform: translateZ(calc((var(--l) + 1) * var(--thick)));
+}
+.file:focus-visible {
+  outline: none;
+}
+.file-edge {
+  position: absolute;
+  background: repeating-linear-gradient(0deg, #fbf9f3 0 3px, #b9b5a8 3px 4px);
+  box-shadow: inset 0 0 0 1.5px var(--line);
+}
+/* A strip of the note's colour runs through the pages, so each section shows from the side too. */
+.file-edge::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 34%;
+  background: var(--c);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.file-front {
+  left: 0;
+  top: 100%;
+  width: 100%;
+  height: var(--thick);
+  transform-origin: 50% 0;
+  transform: rotateX(-90deg);
+}
+.file-side {
+  top: 0;
+  left: 100%;
+  width: var(--thick);
+  height: 100%;
+  background: repeating-linear-gradient(90deg, #fbf9f3 0 3px, #b9b5a8 3px 4px);
+  transform-origin: 0 50%;
+  transform: rotateY(90deg);
+}
+.file-side::after {
+  inset-inline: auto 0;
+  inset-block: 0;
+  width: 34%;
+  height: auto;
+}
+
+.file-tab {
+  position: absolute;
+  left: 100%;
+  top: calc(var(--ty) * var(--u));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: calc((var(--tab-w) + var(--tab-extra, 0)) * var(--u));
+  height: calc(var(--th) * var(--u));
+  min-height: 52px;
+  padding-inline: calc(24 * var(--u)) calc(10 * var(--u));
+  border: 2px solid var(--edge);
+  border-left-width: 0;
+  border-radius: 0 10px 10px 0;
+  background: var(--c);
+  color: var(--t);
+  box-shadow: 3px 3px 0 var(--shadow);
+  line-height: 1.15;
+  rotate: var(--r);
+  transform-origin: 0 50%;
   transition:
-    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    translate 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.tool:hover {
-  transform: translate(-3px, -3px);
-  box-shadow: 9px 9px 0 var(--shadow);
+.file:hover .file-tab,
+.file:focus-visible .file-tab {
+  translate: calc(14 * var(--u)) 0;
+  box-shadow: 6px 6px 0 var(--shadow);
 }
-.tool:active {
-  transform: translate(2px, 2px);
+.file:active .file-tab {
+  translate: 0 0;
   box-shadow: 1px 1px 0 var(--shadow);
 }
-@media (min-width: 640px) {
-  .tool {
-    padding: 2.25rem;
-  }
-  .tool-ink {
-    grid-template-columns: minmax(0, 1fr) 190px;
-    align-items: end;
-  }
+.file:focus-visible .file-tab {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
 }
-.tool-ink {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper);
+.file-title {
+  font-size: max(15px, calc(21 * var(--u)));
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
 }
-.tool-ink .btn {
-  border-color: var(--paper);
-  box-shadow: 3px 3px 0 var(--paper);
+.file-terlanjur .file-title {
+  font-size: max(16px, calc(26 * var(--u)));
 }
-.tool-hl {
-  background: var(--hl);
-  border-color: #17181c;
-  color: #17181c;
-}
-.tool-hl .btn {
-  justify-self: start;
-  background: #fbf9f3;
-  border-color: #17181c;
-  color: #17181c;
-  box-shadow: 3px 3px 0 #17181c;
+.file-sub {
+  margin-top: 0.15em;
+  font-size: max(12px, calc(15 * var(--u)));
+  font-weight: 600;
+  opacity: 0.85;
 }
 
-.mini-flip {
-  perspective: 800px;
-  width: 190px;
-  justify-self: end;
-  rotate: 4deg;
+/* The top sheet: a document somebody has already been marking up. */
+.sheet {
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: calc(30 * var(--u)) calc(30 * var(--u));
 }
-.mini-flip-inner {
-  display: grid;
-  transform-style: preserve-3d;
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+.sheet-head {
+  display: block;
+  font-size: max(15px, calc(30 * var(--u)));
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
 }
-.mini-face {
-  grid-area: 1 / 1;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  padding: 0.9rem;
-  border-radius: 14px;
-  background: var(--paper);
+.sheet-lines {
+  display: block;
+  margin-top: calc(26 * var(--u));
+}
+.sheet-lines i {
+  display: block;
+  height: calc(11 * var(--u));
+  margin-top: calc(15 * var(--u));
+  border-radius: 99px;
+  background: #d5d1c4;
+}
+.sheet-lines i:nth-child(2) {
+  width: 70%;
+  background: #ffd84a;
+}
+.sheet-lines i:nth-child(3) {
+  width: 88%;
+}
+.sheet-lines i:nth-child(4) {
+  width: 52%;
+}
+
+@container (max-width: 640px) {
+  .file-terlanjur .file-title {
+    font-size: max(15px, calc(20 * var(--u)));
+  }
+  .sheet-head {
+    font-size: max(14px, calc(20 * var(--u)));
+  }
+}
+
+/* ---------- Phone pop-up: every tool opens inside this ---------- */
+
+html:has(.pm[open]) {
+  overflow: hidden;
+  scrollbar-gutter: stable; /* so the desk does not jump sideways when the scrollbar goes */
+}
+.pm {
+  width: min(400px, 100vw - 2rem);
+  height: min(820px, 100dvh - 2rem);
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: none;
   color: var(--ink);
-  font-size: 0.85rem;
-  line-height: 1.45;
-  box-shadow: 5px 5px 0 var(--hl);
 }
-.mini-back {
-  transform: rotateY(180deg);
+.pm[open] {
+  animation: pm-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.tool:hover .mini-flip-inner,
-.tool:focus-visible .mini-flip-inner {
-  transform: rotateY(180deg);
+.pm::backdrop {
+  background: rgb(23 24 28 / 0.55);
 }
-
-.mini-list {
-  display: grid;
-  gap: 0.65rem;
-  font-weight: 700;
+@keyframes pm-in {
+  from {
+    opacity: 0;
+    transform: perspective(1200px) rotateX(28deg) translateY(90px) scale(0.86);
+  }
 }
-.mini-list li {
+.pm-phone {
+  height: 100%;
+  box-shadow: 10px 12px 0 var(--hl);
+  animation: none;
+}
+.pm-screen {
   display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+}
+.pm-bar {
+  display: flex;
+  flex: none;
   align-items: center;
-  gap: 0.65rem;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.1rem 0.9rem 0.7rem 1.1rem;
+  border-bottom: 2px solid var(--line);
 }
-.mini-box {
-  display: grid;
-  place-items: center;
-  width: 1.4rem;
-  height: 1.4rem;
-  border: 2px solid #17181c;
-  border-radius: 6px;
-  background: #fbf9f3;
-  transition: background-color 0.2s;
-  transition-delay: calc(var(--i) * 130ms);
+.pm-close {
+  flex: none;
+  padding-block: 0.4rem;
+  box-shadow: 2px 2px 0 var(--shadow);
 }
-.mini-box::after {
-  content: "";
-  width: 0.4rem;
-  height: 0.7rem;
-  margin-top: -0.12rem;
-  border: solid #fbf9f3;
-  border-width: 0 3px 3px 0;
-  transform: rotate(45deg) scale(0);
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-  transition-delay: inherit;
+.pm-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding: 1rem 1rem 1.5rem;
+  background: var(--grain) var(--paper);
 }
-.tool:hover .mini-box,
-.tool:focus-visible .mini-box {
-  background: #17181c;
+.pm-body > :first-child {
+  margin-top: 0;
 }
-.tool:hover .mini-box::after,
-.tool:focus-visible .mini-box::after {
-  transform: rotate(45deg) scale(1);
+/* On a real phone a drawn phone would only waste room: the sheet fills the screen. */
+@media (max-width: 520px) {
+  .pm {
+    width: 100vw;
+    height: 100dvh;
+  }
+  .pm-phone {
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .pm-screen {
+    border-radius: 0;
+  }
 }
 
 /* ---------- Tape: cards pinned to the page like a scrapbook ---------- */
@@ -962,8 +1260,7 @@ body {
   padding: 1rem;
   overscroll-behavior: contain;
 }
-.chat-body > .bubble,
-.sim-preview > .bubble {
+.chat-body > .bubble {
   align-self: flex-start;
   max-width: 85%;
 }
@@ -1008,29 +1305,6 @@ body {
   to {
     transform: translateX(calc(-50% - 0.5rem));
   }
-}
-
-/* ---------- Home: simulation door ---------- */
-.tool-sim {
-  overflow: visible;
-  background: var(--card);
-}
-@media (min-width: 768px) {
-  .tool-sim {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: center;
-  }
-}
-.sim-preview {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  padding: 1.1rem;
-  border: 2px solid var(--line);
-  border-radius: 18px;
-  background: var(--paper);
-  font-size: 0.92rem;
 }
 
 /* Sections slide in as they scroll into view, where the browser supports it. */
