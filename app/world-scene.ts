@@ -11,20 +11,20 @@ type Spot = [x: number, z: number];
 // `narrow` keeps things in the part of the desk a phone shows. `lean` is how far from square on you see it while
 // reading, in radians: towards you over a page lying flat, a little round the side of the tablet.
 const THINGS: { model: string; name: string; href: string; wide: Spot; narrow: Spot; lean: [pitch: number, yaw: number] }[] = [
-  { model: "printout", name: "Cek Pesan", href: "/periksa", wide: [-0.6, -0.15], narrow: [-0.17, -0.42], lean: [0.26, 0] },
-  { model: "cards", name: "Latihan", href: "/latihan", wide: [-0.2, -0.35], narrow: [0.17, -0.42], lean: [0.26, 0] },
-  { model: "tablet", name: "Simulasi", href: "/simulasi", wide: [0.2, -0.36], narrow: [-0.15, 0.2], lean: [-0.06, 0.14] },
-  { model: "folder", name: "Sudah Terlanjur?", href: "/bertindak", wide: [0.6, -0.15], narrow: [0.15, 0.2], lean: [0.26, 0] },
+  { model: "printout", name: "Cek Pesan", href: "/periksa", wide: [-0.6, -0.03], narrow: [-0.17, -0.42], lean: [0.26, 0] },
+  { model: "cards", name: "Latihan", href: "/latihan", wide: [-0.2, -0.23], narrow: [0.17, -0.42], lean: [0.26, 0] },
+  { model: "tablet", name: "Simulasi", href: "/simulasi", wide: [0.2, -0.24], narrow: [-0.15, 0.2], lean: [-0.06, 0.14] },
+  { model: "folder", name: "Sudah Terlanjur?", href: "/bertindak", wide: [0.6, -0.03], narrow: [0.15, 0.2], lean: [0.26, 0] },
 ];
 
 const CAT = { wide: [-0.95, -0.42], narrow: [0, -0.5] } as const;
 
 // Where the home page's HTML labels sit on the desk.
 const ANCHORS: Record<string, { wide: Spot; narrow: Spot }> = {
-  "/periksa": { wide: [-0.6, 0.06], narrow: [-0.17, -0.25] },
-  "/latihan": { wide: [-0.2, -0.17], narrow: [0.17, -0.25] },
-  "/simulasi": { wide: [0.2, -0.26], narrow: [-0.13, 0.38] },
-  "/bertindak": { wide: [0.6, 0.1], narrow: [0.13, 0.38] },
+  "/periksa": { wide: [-0.6, 0.18], narrow: [-0.17, -0.25] },
+  "/latihan": { wide: [-0.2, -0.05], narrow: [0.17, -0.25] },
+  "/simulasi": { wide: [0.2, -0.14], narrow: [-0.13, 0.38] },
+  "/bertindak": { wide: [0.6, 0.22], narrow: [0.13, 0.38] },
 };
 
 // Where a page lies on its thing. `face` is the rectangle the page covers: +y towards the page's top, +z out of it.
@@ -204,7 +204,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   // A darker panel low on the wall. Phones see the wall only behind the home page's text, so there it stays plain.
   const lowWall: THREE.Object3D[] = [part(room, box(8, 0.19, 0.02), rc.panel, 0, 0.085, -1.02), part(room, box(8, 0.02, 0.03), rc.trim, 0, 0.18, -1.015)];
   part(room, box(8, 0.05, 6), rc.floor, 0, -0.75, 0);
-  part(room, box(1.75, 0.004, 0.95), rc.pad, 0, 0.002, -0.075); // a deep blotter, so paper and the yellow folder stand out on it
+  part(room, box(1.75, 0.004, 1.05), rc.pad, 0, 0.002, -0.025); // a deep blotter to the desk's front, so paper and the yellow folder stand out on it
 
   // The window, four panes on a sill, with a view drawn in the theme's own colours.
   const view = new THREE.CanvasTexture(drawView(c));
@@ -259,8 +259,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
           if (!(o instanceof THREE.Mesh)) return;
           const { name: kind, color: raw } = o.material as THREE.MeshStandardMaterial;
           // The kit's wood takes the room's own; its other colours are meant as sRGB, though glTF reads them as linear.
-          // The chair's red cushion turns terracotta: red is kept for risk in this app.
-          const own = kind === "wood" ? rc.wood : kind === "woodDark" ? rc.trim : kind === "carpet" ? rc.accent : undefined;
+          const own = kind === "wood" ? rc.wood : kind === "woodDark" ? rc.trim : undefined;
           const color = own ? own.clone() : new THREE.Color().setRGB(raw.r, raw.g, raw.b, THREE.SRGBColorSpace);
           if (night && !own) color.lerp(rc.wall, 0.35).multiplyScalar(0.75);
           o.material = new THREE.MeshToonMaterial({ color });
@@ -294,9 +293,6 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   furnish("books", 0.17, [0.42, 0, -0.68], { turn: -0.15, wideOnly: true });
   furnish("radio", 0.19, [1.05, 0, -0.68], { turn: -0.25 });
 
-  // Your chair, tucked in at the desk. Near the camera the view is narrow, so it sits close to the middle,
-  // low enough that its back fills the foreground below the desk without hiding anything on it.
-  furnish("chairDesk", 0.82, [-0.28, -0.745, 0.7], { turn: -0.2, wideOnly: true });
 
   // A bookcase on the floor behind the right end of the desk, beside the window: only its upper shelves show
   // above the desk. Squeezed shallow to fit between desk and wall. Its shelves are found by looking down through
