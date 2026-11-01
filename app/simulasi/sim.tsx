@@ -21,6 +21,11 @@ async function call<T>(persona: PersonaId, mode: "balas" | "nilai", history: Sim
   return data as T;
 }
 
+// The grading and its result appear under the chat, which fills the screen: bring each into view as it appears.
+const reveal = (el: HTMLElement | null) => {
+  el?.scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+};
+
 export default function Sim({ ready }: { ready: boolean }) {
   const [persona, setPersona] = useState<PersonaId | null>(null);
   const [lines, setLines] = useState<SimLine[]>([]);
@@ -226,13 +231,13 @@ export default function Sim({ ready }: { ready: boolean }) {
         )}
 
         {ended && busy && !review && (
-          <p className="mt-6 font-semibold" role="status">
+          <p ref={reveal} className="mt-6 font-semibold" role="status">
             Menilai obrolanmu <span className="dots" aria-hidden />
           </p>
         )}
 
         {review && p && (
-          <div className="panel enter mt-6 p-5 @min-[592px]:p-7">
+          <div ref={reveal} className="panel enter mt-6 p-5 @min-[592px]:p-7">
             <p className="hand text-xl">hasil simulasi</p>
             <h3 className="mt-1 text-3xl font-extrabold tracking-tight" style={{ color: RESULT[review.hasil].color }}>
               {RESULT[review.hasil].title}
