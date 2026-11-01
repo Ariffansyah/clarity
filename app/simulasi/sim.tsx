@@ -67,7 +67,7 @@ export default function Sim({ ready }: { ready: boolean }) {
     setEnded(false);
     setMasked(0);
     setDraft("");
-    if (window.innerWidth < 1024 || chat.current?.closest("dialog")) requestAnimationFrame(() => chat.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    requestAnimationFrame(() => chat.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     run(async () => {
       const r = await call<SimReply>(id, "balas", []);
       const first: SimLine[] = [{ from: "penipu", text: r.balasan }];

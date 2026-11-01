@@ -30,7 +30,7 @@ export function Guide() {
     history.replaceState(null, "", `#${id}`);
     window.dispatchEvent(new HashChangeEvent("hashchange"));
     requestAnimationFrame(() => {
-      if (window.innerWidth < 1024 || list.current?.closest("dialog")) list.current?.scrollIntoView({ block: "start" });
+      list.current?.scrollIntoView({ block: "start" });
       list.current?.focus({ preventScroll: true });
     });
   }
