@@ -337,4 +337,77 @@ export const SCENARIOS: Scenario[] = [
       "Alamatnya berakhiran .top dan bukan domain resmi bank.",
     ],
   },
+  {
+    id: "salah-transfer",
+    title: "Salah transfer",
+    channel: "WhatsApp",
+    from: "Bu Ratna",
+    sub: "+62 831-xxxx-5521 · tidak ada di kontakmu",
+    context: "Sejam lalu ada dana masuk Rp1.500.000 ke rekeningmu dari nama yang tidak kamu kenal.",
+    messages: [
+      "Assalamualaikum kak, mohon maaf sekali, tadi saya salah transfer Rp1.500.000 ke rekening kakak.",
+      "Itu uang buat biaya rumah sakit anak saya kak. Tolong segera dikembalikan ya.",
+      "Kirim ke rekening suami saya saja kak, nomornya saya kirim sebentar lagi.",
+    ],
+    scam: true,
+    choices: [
+      {
+        text: "Kirim balik ke rekening suaminya, kasihan",
+        grade: "bahaya",
+        feedback: "Uang yang masuk bisa saja pinjol yang dicairkan atas namamu. Kalau kamu kirim ke rekening lain, utangnya tetap ditagih ke kamu, lengkap dengan bunganya.",
+      },
+      {
+        text: "Kirim balik sendiri ke rekening yang tadi mentransfer",
+        grade: "kurang",
+        feedback: "Lebih baik daripada rekening lain, tapi tetap tanpa catatan resmi. Kalau dananya ternyata pinjaman atas namamu, kamu yang tercatat menerimanya.",
+      },
+      {
+        text: "Cek mutasi di aplikasi bank, lalu laporkan ke bank biar bank yang mengembalikan",
+        grade: "tepat",
+        feedback: "Tepat. Bank bisa mengembalikan dana ke pengirim asal lewat jalur resmi, dan kamu punya bukti bahwa uangnya tidak kamu pakai.",
+      },
+    ],
+    tells: [
+      "Minta dikembalikan ke rekening lain, bukan ke pengirim asal.",
+      "Cerita sedih dan desakan supaya kamu tidak sempat mengecek.",
+      "Uang nyasar bisa berasal dari pinjol yang memakai datamu.",
+    ],
+  },
+  {
+    id: "cs-layar",
+    title: "CS yang membalas keluhanmu",
+    channel: "Instagram",
+    from: "@dompetku.care.id",
+    sub: "Akun dibuat 5 hari lalu · logo DompetKu di foto profil",
+    context: "Semalam kamu mengeluh di kolom komentar akun DompetKu yang asli karena saldomu tertahan.",
+    messages: [
+      "Halo kak, kami dari tim DompetKu Care, sudah lihat keluhan kakak soal saldo tertahan.",
+      "Supaya cepat, silakan unduh aplikasi BantuLayar lalu nyalakan berbagi layar. Kirimkan 9 angka yang muncul ya kak.",
+      "Prosesnya hanya 5 menit dan harus segera, sebelum saldonya hangus.",
+    ],
+    scam: true,
+    choices: [
+      {
+        text: "Pasang aplikasinya, yang penting saldoku cepat kembali",
+        grade: "bahaya",
+        feedback: "Sembilan angka itu kunci akses ke HP-mu. Begitu layar terbagi, mereka melihat PIN dan OTP yang kamu ketik, lalu menguras saldo dari jauh.",
+      },
+      {
+        text: "Minta mereka telepon dulu biar yakin",
+        grade: "kurang",
+        feedback: "Telepon tidak membuktikan apa-apa. Penipu yang menyamar jadi CS memang siap menelepon dengan naskah yang meyakinkan.",
+      },
+      {
+        text: "Abaikan DM-nya, hubungi CS lewat menu Bantuan di aplikasi DompetKu",
+        grade: "tepat",
+        feedback: "Tepat. Penipu memantau keluhan di kolom komentar lalu menyamar jadi CS. Jalur resmi ada di dalam aplikasi, dan CS asli tidak pernah minta berbagi layar.",
+      },
+    ],
+    tells: [
+      "Akun baru yang muncul setelah kamu mengeluh di tempat umum.",
+      "Diminta memasang aplikasi dan berbagi layar.",
+      "Diminta mengirim angka dari aplikasi itu, yang sebenarnya kunci akses ke HP-mu.",
+      "Didesak segera sebelum saldo hangus.",
+    ],
+  },
 ];

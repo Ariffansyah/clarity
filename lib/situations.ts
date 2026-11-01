@@ -9,6 +9,8 @@ export type Situation = { id: string; title: string; steps: Step[] };
 
 const WARN = { href: "#peringatkan", label: "Tulis pesan peringatan" };
 const IASC = { href: "https://iasc.ojk.go.id", label: "iasc.ojk.go.id" };
+const IDEBKU = { href: "https://idebku.ojk.go.id", label: "idebku.ojk.go.id" };
+const OJK_WA = { href: "https://wa.me/6281157157157", label: "WhatsApp OJK" };
 
 export const SITUATIONS: Situation[] = [
   {
@@ -38,6 +40,17 @@ export const SITUATIONS: Situation[] = [
     ],
   },
   {
+    id: "salah-transfer",
+    title: "Ada uang \"salah transfer\" masuk dan aku diminta mengembalikannya",
+    steps: [
+      { when: "Sekarang juga", title: "Jangan pakai dan jangan kirim balik sendiri", detail: "Walau yang menghubungi terdengar sopan atau memelas. Mengirim ke rekening yang mereka sebut adalah inti modusnya." },
+      { when: "Sekarang juga", title: "Cek mutasi langsung di aplikasi bank", detail: "Pastikan uangnya benar-benar masuk. Bukti transfer yang dikirim lewat chat bisa saja editan." },
+      { when: "Hari ini", title: "Laporkan ke bank-mu lewat nomor resmi", detail: "Minta bank yang memproses pengembalian ke rekening asal. Dengan begitu ada catatan resmi bahwa kamu tidak memakai uangnya." },
+      { when: "Hari ini", title: "Cek apakah ada pinjaman atas namamu", detail: "Uang nyasar kadang berasal dari pinjol yang memakai datamu. Pinjaman dari lembaga berizin tercatat di iDebKu OJK. Yang ilegal tidak, jadi waspadai juga SMS atau telepon penagihan.", link: IDEBKU },
+      { when: "Setelahnya", title: "Laporkan penagih pinjaman yang tidak pernah kamu ajukan", detail: "Telepon OJK di 157 atau lewat WhatsApp, lalu simpan semua bukti penagihannya.", link: OJK_WA },
+    ],
+  },
+  {
     id: "tautan",
     title: "Aku membuka tautan dan mengisi data di sana",
     steps: [
@@ -50,11 +63,11 @@ export const SITUATIONS: Situation[] = [
   },
   {
     id: "apk",
-    title: "Aku memasang aplikasi atau file .apk dari chat",
+    title: "Aku memasang aplikasi dari chat atau berbagi layar",
     steps: [
       { when: "Sekarang juga", title: "Matikan data seluler dan Wi-Fi", detail: "Memutus internet menghentikan aplikasi itu mengirim SMS dan OTP-mu ke pelaku." },
       { when: "Sekarang juga", title: "Telepon bank untuk memblokir m-banking sementara", detail: "Pakai telepon lain kalau perlu. Nomornya ada di balik kartu ATM." },
-      { when: "Sekarang juga", title: "Hapus aplikasinya", detail: "Buka Pengaturan, lalu Aplikasi. Cari aplikasi yang baru terpasang, namanya bisa menyamar seperti Undangan atau Lihat Paket. Kalau tidak bisa dihapus, cabut dulu izin Aksesibilitas dan SMS-nya." },
+      { when: "Sekarang juga", title: "Hapus aplikasinya", detail: "Buka Pengaturan, lalu Aplikasi. Cari aplikasi yang baru terpasang, namanya bisa menyamar seperti Undangan atau Lihat Paket, atau aplikasi remote untuk berbagi layar. Kalau tidak bisa dihapus, cabut dulu izin Aksesibilitas dan SMS-nya." },
       { when: "Hari ini", title: "Ganti password dari perangkat lain", detail: "Gunakan HP atau laptop lain yang bersih, karena HP-mu mungkin masih disusupi." },
       { when: "Hari ini", title: "Pertimbangkan reset pabrik", detail: "Cara paling tuntas membersihkan HP. Cadangkan foto dan kontak dulu, tapi jangan cadangkan aplikasinya." },
       { when: "Setelahnya", title: "Laporkan nomor pengirimnya", detail: "Tekan Laporkan di WhatsApp atau aplikasi chat yang dipakai pelaku." },
@@ -66,8 +79,8 @@ export const SITUATIONS: Situation[] = [
     steps: [
       { when: "Sekarang juga", title: "Catat apa yang terkirim dan ke siapa", detail: "Foto KTP, selfie, nomor rekening, atau nama ibu kandung? Catatan ini berguna saat melapor." },
       { when: "Sekarang juga", title: "Hentikan percakapan dan simpan buktinya", detail: "Jangan kirim apa pun lagi, walaupun pelaku bilang datanya kurang lengkap." },
-      { when: "Hari ini", title: "Cek apakah ada pinjaman atas namamu", detail: "Layanan iDebKu dari OJK menampilkan riwayat kredit yang tercatat atas NIK-mu.", link: { href: "https://idebku.ojk.go.id", label: "idebku.ojk.go.id" } },
-      { when: "Hari ini", title: "Tanyakan ke Kontak OJK", detail: "Kalau muncul pinjaman yang tidak pernah kamu ajukan, laporkan dan simpan buktinya. Bisa telepon 157 atau WhatsApp 081 157 157 157.", link: { href: "https://wa.me/6281157157157", label: "WhatsApp OJK" } },
+      { when: "Hari ini", title: "Cek apakah ada pinjaman atas namamu", detail: "Layanan iDebKu dari OJK menampilkan riwayat kredit yang tercatat atas NIK-mu.", link: IDEBKU },
+      { when: "Hari ini", title: "Tanyakan ke Kontak OJK", detail: "Kalau muncul pinjaman yang tidak pernah kamu ajukan, laporkan dan simpan buktinya. Bisa telepon 157 atau WhatsApp 081 157 157 157.", link: OJK_WA },
       { when: "Setelahnya", title: "Waspadai pesan lanjutan yang terdengar meyakinkan", detail: "Penipu yang memegang datamu bisa menyebut nama lengkap dan NIK-mu supaya terlihat resmi." },
     ],
   },
@@ -104,6 +117,9 @@ export const WARNINGS = [
   { id: "pinjol", name: "Pinjol ilegal", ciri: "tawaran pinjaman cair kilat lewat SMS atau WA, cukup foto KTP dan selfie", jangan: "kirim KTP atau pasang aplikasinya. Cek dulu ke WhatsApp OJK 081 157 157 157" },
   { id: "investasi", name: "Investasi bodong", ciri: "janji untung tetap puluhan persen per minggu, katanya tanpa risiko, dan didesak segera transfer", jangan: "setor uang, walaupun katanya coba kecil dulu" },
   { id: "bank", name: "Link palsu atas nama bank", ciri: "SMS atau WA bilang akun mau diblokir atau ada tarif baru, lalu kasih link untuk konfirmasi", jangan: "klik linknya. Buka aplikasi bank langsung atau telepon nomor di balik kartu ATM" },
+  { id: "salah", name: "Salah transfer", ciri: "ada uang masuk ke rekening, lalu orang asing memelas minta dikirim balik ke rekening lain", jangan: "kirim balik sendiri. Laporkan ke bank supaya bank yang mengembalikan" },
+  { id: "layar", name: "CS palsu minta berbagi layar", ciri: "mengaku CS bank atau e-wallet, sering setelah kita mengeluh di media sosial, lalu menyuruh pasang aplikasi remote atau berbagi layar", jangan: "pasang aplikasinya atau berbagi layar. CS resmi tidak pernah meminta itu" },
+  { id: "darurat", name: "Kabar darurat dan suara tiruan AI", ciri: "telepon atau chat bilang keluarga kecelakaan atau ditangkap, suaranya bisa mirip sekali karena ditiru AI, lalu minta transfer saat itu juga", jangan: "transfer sebelum menelepon langsung orangnya lewat nomor yang sudah kamu simpan" },
   { id: "dibajak", name: "Akun dibajak", ciri: "akun teman tiba-tiba pinjam uang atau minta kode OTP", jangan: "kirim uang atau kode apa pun sebelum memastikan lewat telepon" },
 ];
 

@@ -40,6 +40,16 @@ const SAMPLES = [
     label: "Kode masuk yang kamu minta sendiri",
     text: "482913 adalah kode masuk DompetKu kamu. Berlaku 5 menit. Kode ini rahasia, jangan berikan ke siapa pun, termasuk petugas DompetKu.",
   },
+  {
+    channel: "WhatsApp",
+    label: "Salah transfer",
+    text: "Maaf kak, tadi saya salah transfer Rp1.500.000 ke rekening kakak. Itu uang biaya rumah sakit anak saya. Tolong segera dikembalikan ke rekening suami saya ya kak, bukan ke rekening yang tadi.",
+  },
+  {
+    channel: "Instagram",
+    label: "CS minta berbagi layar",
+    text: "Halo kak, kami tim DompetKu Care, sudah lihat keluhan kakak soal saldo tertahan. Supaya cepat, silakan unduh aplikasi BantuLayar lalu nyalakan berbagi layar ya. Harus segera sebelum saldonya hangus.",
+  },
 ];
 
 const LEVELS = [
@@ -81,6 +91,10 @@ const ACT: Record<string, string> = {
   file: "apk",
   data: "data",
   pinjol: "data",
+  salah: "salah-transfer",
+  layar: "apk",
+  qris: "transfer",
+  darurat: "transfer",
 };
 
 export default function Checker({ aiReady }: { aiReady: boolean }) {
@@ -244,7 +258,7 @@ export default function Checker({ aiReady }: { aiReady: boolean }) {
                   key={s.label}
                   type="button"
                   className="btn sticker"
-                  style={{ "--tilt": `${[-3, 2, -1.5, 3, -2][i]}deg` } as React.CSSProperties}
+                  style={{ "--tilt": `${[-3, 2, -1.5, 3, -2, 2.5, -1][i]}deg` } as React.CSSProperties}
                   onClick={() => {
                     setText(s.text);
                     setCtx([]);
@@ -333,6 +347,8 @@ function Report({
     );
   }
   const guide = result.flags.map((f) => ACT[f.id]).find(Boolean);
+  // No quotes from the message itself: its links would turn clickable in WhatsApp.
+  const share = [`Aku cek pesan mencurigakan pakai Clarity. Hasilnya: ${level.name}.`, ...result.flags.map((f) => `- ${f.label}`), tips[0]].join("\n");
   let i = 0;
 
   return (
@@ -438,6 +454,11 @@ function Report({
           <Link href={guide ? `/bertindak#${guide}` : "/bertindak"} className="btn">
             Sudah terlanjur menanggapi?
           </Link>
+        )}
+        {result.level > 0 && (
+          <a href={`https://wa.me/?text=${encodeURIComponent(share)}`} target="_blank" rel="noopener noreferrer" className="btn">
+            Kirim hasil ke keluarga
+          </a>
         )}
         <Link href="/bertindak#peringatkan" className="btn">
           Peringatkan teman

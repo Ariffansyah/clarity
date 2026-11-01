@@ -17,6 +17,10 @@ const PHRASES = [
   "Profit 30% per minggu",
   "Cair 10 menit tanpa BI checking",
   "Ini aku, ganti nomor",
+  "Maaf kak, saya salah transfer",
+  "Nyalakan berbagi layar, kami bantu",
+  "Scan QRIS ini untuk terima dana",
+  "Ma, aku kecelakaan, tolong transfer",
 ];
 
 export default function Periksa() {

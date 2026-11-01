@@ -39,6 +39,19 @@ test("job and loan scams", () => {
   assert.ok(ids("Hai, ini aku. HP lamaku rusak. Bisa pinjam Rp500.000 dulu?").includes("kenalan"));
 });
 
+test("newer scams: screen sharing, mistaken transfer, QR to receive, family emergency", () => {
+  assert.ok(ids("Silakan install AnyDesk lalu kirim 9 angkanya").includes("layar"));
+  assert.ok(ids("Nyalakan berbagi layar supaya kami bantu").includes("layar"));
+  assert.ok(ids("Maaf kak saya salah transfer ke rekening kakak").includes("salah"));
+  assert.ok(ids("Scan QRIS ini untuk menerima dana refund").includes("qris"));
+  assert.ok(ids("Masukkan PIN kamu untuk mencairkan hadiah").includes("qris"));
+  assert.ok(ids("Bu, anak ibu kecelakaan, butuh biaya operasi").includes("darurat"));
+  assert.ok(ids("Ma, aku ditahan polisi").includes("darurat"));
+  // Paying by QR is normal, and "terima kasih" is not receiving.
+  assert.ok(!ids("Scan QRIS di kasir untuk bayar ya, terima kasih").includes("qris"));
+  assert.ok(!ids("Jangan salah transfer ya, cek nomornya dulu").includes("salah"));
+});
+
 test("redaction masks contact data but keeps rupiah amounts", async () => {
   const { redact } = await import("./ai.ts");
   const r = redact("Hubungi +62 812-3456-7890 atau rina@contoh.id, kode 482913, gaji Rp150.000");
