@@ -67,7 +67,7 @@ export default function Sim({ ready }: { ready: boolean }) {
     setEnded(false);
     setMasked(0);
     setDraft("");
-    if (window.innerWidth < 1024) requestAnimationFrame(() => chat.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    requestAnimationFrame(() => chat.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     run(async () => {
       const r = await call<SimReply>(id, "balas", []);
       const first: SimLine[] = [{ from: "penipu", text: r.balasan }];
@@ -102,12 +102,12 @@ export default function Sim({ ready }: { ready: boolean }) {
   }
 
   return (
-    <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14">
-      <div className="lg:sticky lg:top-6">
+    <div className="grid items-start gap-10 @min-[976px]:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] @min-[976px]:gap-14">
+      <div className="@min-[976px]:sticky @min-[976px]:top-6">
         <h2 id="lawan" className="font-bold">
           Pilih lawan bicaramu
         </h2>
-        <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+        <div className="mt-3 grid gap-2.5 @min-[592px]:grid-cols-2">
           {PERSONAS.map((x) => (
             <button
               key={x.id}
@@ -231,7 +231,7 @@ export default function Sim({ ready }: { ready: boolean }) {
         )}
 
         {review && p && (
-          <div className="panel enter mt-6 p-5 sm:p-7">
+          <div className="panel enter mt-6 p-5 @min-[592px]:p-7">
             <p className="hand text-xl">hasil simulasi</p>
             <h3 className="mt-1 text-3xl font-extrabold tracking-tight" style={{ color: RESULT[review.hasil].color }}>
               {RESULT[review.hasil].title}

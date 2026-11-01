@@ -33,7 +33,7 @@ const ICONS = {
 };
 
 const LINKS = [
-  { href: "/", label: "Cek pesan", icon: ICONS.cek },
+  { href: "/periksa", label: "Cek pesan", icon: ICONS.cek },
   { href: "/latihan", label: "Latihan", icon: ICONS.latihan },
   { href: "/simulasi", label: "Simulasi", icon: ICONS.simulasi },
   { href: "/bertindak", label: "Sudah terlanjur?", icon: ICONS.terlanjur },

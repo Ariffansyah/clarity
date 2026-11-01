@@ -574,50 +574,6 @@ body {
   }
 }
 
-/* ---------- Mascot: blinks, swishes its tail, and waves now and then ---------- */
-
-.mascot .mascot-eyes,
-.mascot .mascot-wave,
-.mascot .mascot-tail {
-  transform-box: fill-box;
-}
-.mascot .mascot-eyes {
-  transform-origin: center;
-  animation: mascot-blink 4.5s infinite;
-}
-.mascot .mascot-wave {
-  transform-origin: 100% 100%;
-  animation: mascot-wave 7s 1s infinite;
-}
-.mascot .mascot-tail {
-  transform-origin: 0% 100%;
-  animation: mascot-tail 3s ease-in-out infinite;
-}
-@keyframes mascot-tail {
-  50% {
-    rotate: -10deg;
-  }
-}
-@keyframes mascot-blink {
-  0%, 94%, 100% {
-    scale: 1 1;
-  }
-  97% {
-    scale: 1 0.1;
-  }
-}
-@keyframes mascot-wave {
-  0%, 80%, 100% {
-    rotate: 0deg;
-  }
-  85%, 95% {
-    rotate: 12deg;
-  }
-  90% {
-    rotate: -6deg;
-  }
-}
-
 /* Red-pen margin notes */
 .hand {
   display: inline-block;
@@ -745,131 +701,139 @@ body {
   background: var(--hl-bg);
 }
 
-/* ---------- Home: doors to the other two tools ---------- */
+/* ---------- The desk world: one 3D desk behind every page ---------- */
 
-.tool {
-  display: grid;
-  align-content: space-between;
-  gap: 2rem;
-  padding: 1.75rem;
-  border: 2px solid var(--line);
-  border-radius: 22px;
-  overflow: hidden;
-  box-shadow: 4px 4px 0 var(--shadow);
-  transition:
-    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+/* clip, not hidden: hidden can still be scrolled by script, and a sheet sliding in would drag the page with it. */
+html,
+body {
+  overflow: clip;
 }
-.tool:hover {
-  transform: translate(-3px, -3px);
-  box-shadow: 9px 9px 0 var(--shadow);
-}
-.tool:active {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--shadow);
-}
-@media (min-width: 640px) {
-  .tool {
-    padding: 2.25rem;
-  }
-  .tool-ink {
-    grid-template-columns: minmax(0, 1fr) 190px;
-    align-items: end;
-  }
-}
-.tool-ink {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper);
-}
-.tool-ink .btn {
-  border-color: var(--paper);
-  box-shadow: 3px 3px 0 var(--paper);
-}
-.tool-hl {
-  background: var(--hl);
-  border-color: #17181c;
-  color: #17181c;
-}
-.tool-hl .btn {
-  justify-self: start;
-  background: #fbf9f3;
-  border-color: #17181c;
-  color: #17181c;
-  box-shadow: 3px 3px 0 #17181c;
-}
-
-.mini-flip {
-  perspective: 800px;
-  width: 190px;
-  justify-self: end;
-  rotate: 4deg;
-}
-.mini-flip-inner {
-  display: grid;
-  transform-style: preserve-3d;
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.mini-face {
-  grid-area: 1 / 1;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  padding: 0.9rem;
-  border-radius: 14px;
-  background: var(--paper);
-  color: var(--ink);
-  font-size: 0.85rem;
-  line-height: 1.45;
-  box-shadow: 5px 5px 0 var(--hl);
-}
-.mini-back {
-  transform: rotateY(180deg);
-}
-.tool:hover .mini-flip-inner,
-.tool:focus-visible .mini-flip-inner {
-  transform: rotateY(180deg);
-}
-
-.mini-list {
-  display: grid;
-  gap: 0.65rem;
-  font-weight: 700;
-}
-.mini-list li {
+body {
   display: flex;
-  align-items: center;
-  gap: 0.65rem;
+  height: 100dvh;
+  flex-direction: column;
 }
-.mini-box {
+.world {
+  position: fixed;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+:root:not([data-world]) .world {
+  visibility: hidden;
+}
+.world-top {
+  position: relative;
+  z-index: 10;
+  flex: none;
+}
+
+/* The sheet of paper a page lives on. It scrolls by itself; the desk stays put. */
+.lembar-wrap {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  min-height: 0;
+  width: min(860px, 100% - 2.5rem);
+  margin: 1.5rem auto 1.75rem;
+}
+.lembar {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scroll-padding-top: 2rem; /* so jumping to a page's first heading keeps the margin above it */
+  padding: 2rem clamp(1.1rem, 4vw, 2.5rem) 3rem;
+  background: var(--grain) var(--paper);
+  animation: lembar-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.lembar:focus-visible {
+  outline-offset: -4px;
+}
+@keyframes lembar-in {
+  from {
+    transform: translateY(100dvh);
+  }
+}
+.lembar-size {
+  position: absolute;
+  top: -1.5rem;
+  right: 0.75rem;
+  width: 44px;
+  padding-inline: 0;
+  box-shadow: 2px 2px 0 var(--shadow);
+}
+@media (min-width: 1000px) {
+  .lembar-wrap:not([data-full="true"]) .lembar-size {
+    top: 0;
+    right: -4.25rem;
+  }
+}
+.lembar-wrap[data-full="true"] {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  width: 100%;
+  margin: 0;
+}
+.lembar-wrap[data-full="true"] .lembar {
+  padding-top: 4rem;
+  padding-inline: max(1.25rem, calc(50% - 30rem));
+  animation: none;
+}
+.lembar-wrap[data-full="true"] .lembar-size {
+  top: 0.75rem;
+  right: 1.25rem;
+}
+/* Phones: leave a strip of desk showing above the page, and room for the bottom tab bar. */
+@media (max-width: 767px) {
+  .lembar-wrap {
+    width: calc(100% - 1.5rem);
+    margin: 6rem auto calc(5.25rem + env(safe-area-inset-bottom));
+  }
+  .lembar-size {
+    display: none;
+  }
+}
+/* Without WebGL there is no desk behind it: a plain bordered page. */
+:root:not([data-world]) .lembar {
+  border: 2px solid var(--line);
+}
+
+/* Home has no sheet: you see the desk itself, with the labels pinned to the things on it. */
+.lembar-wrap[data-page="home"] {
+  width: min(1152px, 100% - 2rem);
+  margin-top: 1.5rem;
+  pointer-events: none; /* clicks through to the things on the desk */
+}
+:root .lembar-wrap[data-page="home"] .lembar {
+  overflow: visible;
+  padding: 0 0.5rem;
+  border: 0;
+  background: none;
+  animation: none;
+}
+.meja-links {
   display: grid;
-  place-items: center;
-  width: 1.4rem;
-  height: 1.4rem;
-  border: 2px solid #17181c;
-  border-radius: 6px;
-  background: #fbf9f3;
-  transition: background-color 0.2s;
-  transition-delay: calc(var(--i) * 130ms);
+  gap: 0.75rem;
+  pointer-events: auto;
 }
-.mini-box::after {
-  content: "";
-  width: 0.4rem;
-  height: 0.7rem;
-  margin-top: -0.12rem;
-  border: solid #fbf9f3;
-  border-width: 0 3px 3px 0;
-  transform: rotate(45deg) scale(0);
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-  transition-delay: inherit;
+:root[data-world] .meja-link {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: max-content;
+  max-width: 44vw;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  text-align: center;
+  transform: translate(calc(var(--x, -999px) - 50%), var(--y, -999px));
+  transition: box-shadow 0.16s, background-color 0.2s;
+  pointer-events: auto;
 }
-.tool:hover .mini-box,
-.tool:focus-visible .mini-box {
-  background: #17181c;
-}
-.tool:hover .mini-box::after,
-.tool:focus-visible .mini-box::after {
-  transform: rotate(45deg) scale(1);
-}
+
 
 /* ---------- Tape: cards pinned to the page like a scrapbook ---------- */
 .taped {
@@ -962,8 +926,7 @@ body {
   padding: 1rem;
   overscroll-behavior: contain;
 }
-.chat-body > .bubble,
-.sim-preview > .bubble {
+.chat-body > .bubble {
   align-self: flex-start;
   max-width: 85%;
 }
@@ -1010,29 +973,6 @@ body {
   }
 }
 
-/* ---------- Home: simulation door ---------- */
-.tool-sim {
-  overflow: visible;
-  background: var(--card);
-}
-@media (min-width: 768px) {
-  .tool-sim {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: center;
-  }
-}
-.sim-preview {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  padding: 1.1rem;
-  border: 2px solid var(--line);
-  border-radius: 18px;
-  background: var(--paper);
-  font-size: 0.92rem;
-}
-
 /* Sections slide in as they scroll into view, where the browser supports it. */
 @supports (animation-timeline: view()) {
   .rise-in {
@@ -1070,6 +1010,9 @@ body {
     display: none;
   }
   .rise-in {
+    animation: none;
+  }
+  .lembar {
     animation: none;
   }
 }
