@@ -7,11 +7,11 @@ Indonesia mengenali tipuan digital, berlatih mengambil keputusan, dan tahu langk
 
 | Halaman | Pendekatan | Isi |
 | --- | --- | --- |
-| `/` Cek pesan | Recognize | Tempel pesan atau tautan. Bagian yang mencurigakan ditandai stabilo, tiap tanda dijelaskan alasannya, tautan dicek (tautan pendek, akhiran domain murah, nama merek palsu, file `.apk`, IP, punycode), lalu diberi langkah aman. |
+| `/periksa` Cek pesan | Recognize | Tempel pesan atau tautan. Bagian yang mencurigakan ditandai stabilo, tiap tanda dijelaskan alasannya, tautan dicek (tautan pendek, akhiran domain murah, nama merek palsu, file `.apk`, IP, punycode), lalu diberi langkah aman. |
 | `/latihan` | Learn | 9 situasi fiktif (7 penipuan, 2 wajar). Pilih tindakan, kartu berbalik menunjukkan umpan balik dan pesan yang sudah ditandai. Skor di akhir. |
 | `/bertindak` | Act | Daftar periksa per kejadian (OTP bocor, sudah transfer, buka tautan palsu, pasang APK, kirim KTP, akun dibajak, ditiru), penyusun pesan peringatan untuk teman, dan saluran lapor resmi. |
 | `/simulasi` | Learn (AI) | Ngobrol dengan penipu fiktif yang diperankan AI (6 persona), maksimal 8 balasan, lalu dinilai: aman, hampir kena, atau kena, beserta alasannya. |
-| `/` Tanya AI | Recognize (AI) | Setelah pemeriksaan berbasis aturan, pengguna bisa meminta pendapat kedua dari AI. Kutipan AI yang tidak ada di pesan dibuang, jadi setiap sorotan menunjuk teks asli. |
+| `/periksa` Tanya AI | Recognize (AI) | Setelah pemeriksaan berbasis aturan, pengguna bisa meminta pendapat kedua dari AI. Kutipan AI yang tidak ada di pesan dibuang, jadi setiap sorotan menunjuk teks asli. |
 
 ## Cara kerja dan batasannya
 

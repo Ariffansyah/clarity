@@ -84,7 +84,7 @@ export default function Trainer() {
           <button type="button" className="btn btn-main" onClick={restart}>
             Ulangi dengan urutan acak
           </button>
-          <Link href="/" className="btn">
+          <Link href="/periksa" className="btn">
             Periksa pesan sungguhan
           </Link>
         </div>
