@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { easeOut, planeFromRect, routeOf } from "./desk.ts";
+import { catPose, easeOut, planeFromRect, routeOf } from "./desk.ts";
+
+test("Sorot rests between blinks and waves, then does each briefly", () => {
+  assert.deepEqual([catPose(0).eyes, catPose(0).arm], [1, 0]);
+  assert.equal(catPose(4.5 * 0.97).eyes, 0.1);
+  assert.notEqual(catPose(7 * 0.85).arm, 0);
+  assert.equal(catPose(7 * 0.5).arm, 0);
+});
 
 test("every page maps to its desk, nested paths included", () => {
   assert.equal(routeOf("/"), "home");

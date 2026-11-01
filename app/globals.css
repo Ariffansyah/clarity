@@ -574,50 +574,6 @@ body {
   }
 }
 
-/* ---------- Mascot: blinks, swishes its tail, and waves now and then ---------- */
-
-.mascot .mascot-eyes,
-.mascot .mascot-wave,
-.mascot .mascot-tail {
-  transform-box: fill-box;
-}
-.mascot .mascot-eyes {
-  transform-origin: center;
-  animation: mascot-blink 4.5s infinite;
-}
-.mascot .mascot-wave {
-  transform-origin: 100% 100%;
-  animation: mascot-wave 7s 1s infinite;
-}
-.mascot .mascot-tail {
-  transform-origin: 0% 100%;
-  animation: mascot-tail 3s ease-in-out infinite;
-}
-@keyframes mascot-tail {
-  50% {
-    rotate: -10deg;
-  }
-}
-@keyframes mascot-blink {
-  0%, 94%, 100% {
-    scale: 1 1;
-  }
-  97% {
-    scale: 1 0.1;
-  }
-}
-@keyframes mascot-wave {
-  0%, 80%, 100% {
-    rotate: 0deg;
-  }
-  85%, 95% {
-    rotate: 12deg;
-  }
-  90% {
-    rotate: -6deg;
-  }
-}
-
 /* Red-pen margin notes */
 .hand {
   display: inline-block;
@@ -863,9 +819,6 @@ body {
   gap: 0.75rem;
   pointer-events: auto;
 }
-.meja-sorot {
-  display: none;
-}
 :root[data-world] .meja-link {
   position: fixed;
   left: 0;
@@ -879,14 +832,6 @@ body {
   transform: translate(calc(var(--x, -999px) - 50%), var(--y, -999px));
   transition: box-shadow 0.16s, background-color 0.2s;
   pointer-events: auto;
-}
-:root[data-world] .meja-sorot {
-  position: fixed;
-  left: 0;
-  top: 0;
-  display: block;
-  width: clamp(64px, 9vw, 120px);
-  transform: translate(calc(var(--x, -999px) - 50%), calc(var(--y, -999px) - 100%));
 }
 
 

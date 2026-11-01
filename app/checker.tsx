@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { analyze, CONTEXT, MAX_LENGTH, type Result } from "@/lib/analyze";
 import Marked from "./marked";
-import Mascot from "./mascot";
 import Phone from "./phone";
 import AIOpinionCard from "./ai-opinion";
 
@@ -138,12 +137,9 @@ export default function Checker({ aiReady }: { aiReady: boolean }) {
   return (
     <div className="grid items-start gap-10 @min-[976px]:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] @min-[976px]:gap-14">
       <div className="@min-[976px]:sticky @min-[976px]:top-6">
-        <div className="flex items-end justify-between gap-4">
-          <h1 className="text-[2.6rem] leading-[1.02] font-extrabold tracking-[-0.035em] text-balance @min-[592px]:text-6xl">
-            <mark className="hl">Ragu</mark> sama pesan ini?
-          </h1>
-          <Mascot className="w-16 shrink-0 @min-[592px]:w-24" />
-        </div>
+        <h1 className="text-[2.6rem] leading-[1.02] font-extrabold tracking-[-0.035em] text-balance @min-[592px]:text-6xl">
+          <mark className="hl">Ragu</mark> sama pesan ini?
+        </h1>
         <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
           Tempel chat, SMS, email, atau tautan yang bikin kamu curiga. Clarity menandai bagian yang patut dicurigai dan
           menjelaskan alasannya, supaya kamu bisa memutuskan dengan kepala dingin.

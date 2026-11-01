@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Mascot from "./mascot";
 
 const FILES = [
   { href: "/periksa", title: "Cek Pesan", sub: "Ragu sama pesan?" },
@@ -29,9 +28,6 @@ export default function Home() {
           </li>
         ))}
       </ul>
-      <div data-anchor="sorot" className="meja-sorot" aria-hidden>
-        <Mascot />
-      </div>
     </>
   );
 }

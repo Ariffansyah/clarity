@@ -27,3 +27,14 @@ export function planeFromRect(
 }
 
 export const easeOut = (t: number) => 1 - (1 - t) ** 3;
+
+/** Sorot's idle motion at time t seconds: a slow tail swish, a blink, and now and then a wave. */
+export function catPose(t: number) {
+  const blink = (t % 4.5) / 4.5;
+  const wave = (t % 7) / 7;
+  return {
+    tail: Math.sin((t * 2 * Math.PI) / 3) * 0.17,
+    eyes: blink > 0.95 && blink < 0.99 ? 0.1 : 1,
+    arm: wave > 0.8 ? Math.sin(((wave - 0.8) / 0.2) * 4 * Math.PI) * 0.25 : 0,
+  };
+}

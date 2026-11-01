@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { easeOut, planeFromRect, type Route } from "@/lib/desk";
+import { buildCat } from "./world-cat";
 
 const SWITCH = 0.55; // seconds for one desk's things to leave and the next ones to arrive
 const FRAME_DIST = 1;
@@ -35,13 +36,15 @@ const DESKS: Record<Route, Prop[]> = {
   lain: [],
 };
 
-// Where the home page's HTML labels and Sorot stand on the desk.
+// Sorot stays on the desk on every page, moving aside once a sheet is up.
+const CAT = { home: { wide: [-0.95, -0.42], narrow: [0, -0.5] }, page: { wide: [-1.02, -0.62], narrow: [0, -0.62] } } as const;
+
+// Where the home page's HTML labels sit on the desk.
 const ANCHORS: Record<string, { wide: Spot; narrow: Spot }> = {
   "/periksa": { wide: [-0.6, 0.06], narrow: [-0.17, -0.25] },
   "/latihan": { wide: [-0.2, -0.17], narrow: [0.17, -0.25] },
   "/simulasi": { wide: [0.2, -0.26], narrow: [-0.13, 0.38] },
   "/bertindak": { wide: [0.6, 0.1], narrow: [0.13, 0.38] },
-  sorot: { wide: [-0.95, -0.42], narrow: [0, 0.1] },
 };
 
 function palette() {
@@ -176,6 +179,11 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     return { route, group, props, t: route === first ? 1 : 0 };
   });
   const clickable = stages.find((s) => s.route === "home")!.props.map((p) => p.g);
+
+  const sorot = buildCat(c.ink);
+  scene.add(sorot.cat);
+  let catClock = 0;
+  let catShown = -1;
 
   const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 20);
   scene.add(camera);
@@ -321,8 +329,28 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       lookY += (ty - lookY) * k;
       dirty = true;
     }
+    // Sorot keeps the desk redrawing, so cap it at 30 fps, and stop when nothing of the desk is visible.
+    if (!reduced.matches && sheet()?.dataset.full !== "true") {
+      catClock += dt;
+      if (catClock - catShown >= 1 / 30) {
+        catShown = catClock;
+        sorot.pose(catClock);
+        dirty = true;
+      }
+    }
     if (!dirty) return;
     dirty = false;
+
+    {
+      const aside = easeOut(frameT);
+      const [hx, hz] = narrow ? CAT.home.narrow : CAT.home.wide;
+      const [px, pz] = narrow ? CAT.page.narrow : CAT.page.wide;
+      const x = (hx + (px - hx) * aside) * spread;
+      const z = hz + (pz - hz) * aside;
+      sorot.cat.position.set(x, 0.008, z); // just above the desk, so the outline underneath does not cut into it
+      sorot.cat.rotation.y = Math.atan2(eye.x - x, eye.z - z); // always sits facing you
+      sorot.cat.scale.setScalar(narrow ? 0.55 : 0.85);
+    }
 
     for (const s of stages) {
       s.group.visible = s.t > 0;
@@ -374,7 +402,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       canvas.removeEventListener("click", onClick);
       scene.traverse((o) => {
         if (o instanceof THREE.Mesh || o instanceof THREE.LineSegments) {
-          o.geometry.dispose();
+          o.geometry.dispose(); // shared geometries and materials are safe to dispose twice
           for (const m of [o.material].flat()) m.dispose();
         }
       });
