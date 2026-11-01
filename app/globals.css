@@ -245,10 +245,9 @@ body {
   background: var(--card);
 }
 
-/* ---------- 3D inspection while analysing ---------- */
+/* ---------- Scanning while analysing: the message, swept by a highlighter beam ---------- */
 
 .scan {
-  perspective: 900px;
   display: grid;
   place-items: center;
   padding: 2.5rem 0 1.5rem;
@@ -266,7 +265,6 @@ body {
   font-size: 0.85rem;
   line-height: 1.55;
   color: var(--muted);
-  animation: inspect 1.1s cubic-bezier(0.5, 0, 0.3, 1) both;
 }
 .scan-beam {
   position: absolute;
@@ -275,22 +273,6 @@ body {
   height: 40%;
   background: linear-gradient(transparent, rgb(255 216 74 / 0.55), transparent);
   animation: beam 0.55s linear 2 0.05s both;
-}
-@keyframes inspect {
-  0% {
-    transform: rotateX(60deg) rotateZ(-10deg) translateY(40px) scale(0.9);
-    opacity: 0;
-  }
-  35% {
-    transform: rotateX(20deg) rotateY(-18deg) rotateZ(-2deg);
-    opacity: 1;
-  }
-  70% {
-    transform: rotateX(10deg) rotateY(16deg) rotateZ(1deg);
-  }
-  100% {
-    transform: none;
-  }
 }
 @keyframes beam {
   to {
@@ -466,123 +448,6 @@ body {
   line-height: 1.1;
   color: var(--danger);
   rotate: -2deg;
-}
-
-/* ---------- Home: the phone, marked up, with notes floating off it ---------- */
-
-.phone-stage {
-  --rx: 0deg;
-  --ry: 0deg;
-  perspective: 1100px;
-  padding: 3rem 0 1.25rem;
-  overflow-x: clip;
-}
-.phone-rig {
-  position: relative;
-  width: min(72%, 290px);
-  margin-inline: auto;
-  transform-style: preserve-3d;
-  transform: rotateX(calc(9deg + var(--rx))) rotateY(calc(-15deg + var(--ry))) rotateZ(1.5deg);
-  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.phone {
-  border-radius: 36px;
-  background: var(--ink);
-  padding: 9px;
-  box-shadow: 14px 18px 0 var(--hl);
-  animation: phone-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.phone-screen {
-  min-height: 390px;
-  overflow: hidden;
-  border-radius: 28px;
-  background: var(--card);
-}
-@keyframes phone-in {
-  from {
-    opacity: 0;
-    translate: 0 40px;
-  }
-}
-.note {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  gap: 0.1rem;
-  padding: 0.15rem 0.45rem;
-  border-radius: 8px;
-  background: var(--paper);
-  font-family: var(--font-hand);
-  font-weight: 700;
-  font-size: 1.3rem;
-  line-height: 1;
-  color: var(--danger);
-  white-space: nowrap;
-  transform: translateZ(var(--z)) rotate(var(--r));
-  animation: note-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: var(--d);
-}
-.n1 {
-  --r: 5deg;
-  --z: 80px;
-  --d: 0.9s;
-  top: -9%;
-  right: -16%;
-}
-.n2 {
-  --r: -5deg;
-  --z: 60px;
-  --d: 1.15s;
-  top: 75%;
-  left: -14%;
-}
-.n3 {
-  --r: -3deg;
-  --z: 100px;
-  --d: 1.4s;
-  top: 86%;
-  right: -12%;
-}
-@media (max-width: 640px) {
-  .note {
-    font-size: 1.05rem;
-  }
-  .note svg {
-    display: none;
-  }
-  .n1 {
-    top: -5%;
-    right: -6%;
-  }
-  .n2 {
-    left: 2%;
-  }
-  .n3 {
-    right: 0;
-  }
-}
-@keyframes note-in {
-  from {
-    opacity: 0;
-    scale: 0.4;
-  }
-}
-
-/* Sample messages as stickers: slightly crooked until you reach for one */
-.sticker {
-  rotate: var(--tilt, 0deg);
-  padding: 0.5rem 0.95rem;
-  font-size: 0.92rem;
-  transition:
-    transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.16s cubic-bezier(0.22, 1, 0.36, 1),
-    rotate 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 0.2s;
-}
-.sticker:hover,
-.sticker:focus-visible {
-  rotate: 0deg;
-  background: var(--hl-bg);
 }
 
 /* ---------- The desk world: one 3D desk behind every page ---------- */
@@ -884,50 +749,6 @@ body {
   color: #17181c;
 }
 
-/* ---------- Home: phrases scammers love ---------- */
-.marquee {
-  overflow: hidden;
-  padding: 0.75rem 0 1rem;
-  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
-}
-.marquee-track {
-  display: flex;
-  width: max-content;
-  gap: 1rem;
-  animation: marquee 55s linear infinite;
-}
-.marquee:hover .marquee-track {
-  animation-play-state: paused;
-}
-.marquee li {
-  flex: none;
-  padding: 0.7rem 1.1rem;
-  border: 2px solid var(--line);
-  border-radius: 14px;
-  background: var(--card);
-  font-size: 1.05rem;
-  font-weight: 700;
-  box-shadow: 3px 3px 0 var(--shadow);
-  rotate: -1.5deg;
-}
-.marquee li:nth-child(even) {
-  rotate: 1.2deg;
-}
-@keyframes marquee {
-  to {
-    transform: translateX(calc(-50% - 0.5rem));
-  }
-}
-
-/* Sections slide in as they scroll into view, where the browser supports it. */
-@supports (animation-timeline: view()) {
-  .rise-in {
-    animation: rise linear both;
-    animation-timeline: view();
-    animation-range: entry 5% cover 25%;
-  }
-}
-
 } /* end components */
 
 /* ---------- On the desk: each page dressed as the thing it lies on ----------
@@ -947,6 +768,32 @@ body {
   flex: 1;
   min-height: 0;
   height: auto;
+}
+
+/* Whatever the thing, what you press lies flat on it, printed or drawn on its screen: no raised app buttons, and no
+   tape, which belongs to a scrapbook rather than to anything on the desk. */
+:root[data-world] .lembar-wrap:not([data-page="home"]) :is(.btn, .choice, .scan-card) {
+  box-shadow: none;
+}
+:root[data-world] .lembar-wrap:not([data-page="home"]) :is(.btn, .choice):is(:hover, :active, :disabled, [aria-disabled="true"]) {
+  transform: none;
+  box-shadow: none;
+}
+:root[data-world] .lembar-wrap:not([data-page="home"]) :is(.btn:not(.btn-main, .btn-quiet), .choice:not([aria-pressed="true"])):hover {
+  background: var(--hl-bg);
+}
+:root[data-world] .lembar-wrap:not([data-page="home"]) .taped::before {
+  display: none;
+}
+
+/* Paper things (the printout, the sheet in the folder, the clipboard's checklist): what is on them is printed, in
+   thin ink lines with small corners. */
+:root[data-world] :is([data-page="periksa"], [data-page="bertindak"], [data-page="amankan"]) :is(.btn, .choice, .field, .panel, .ai-card, .scan-card, .border-2) {
+  border-width: 1.5px;
+  border-radius: 4px;
+}
+:root[data-world] :is([data-page="periksa"], [data-page="bertindak"], [data-page="amankan"]) .panel {
+  background: none;
 }
 
 /* The printout: a worksheet off the printer, with a letterhead, ruled writing lines and boxes to tick. */
@@ -1049,8 +896,11 @@ body {
 :root[data-world] [data-page="simulasi"] h1 {
   font-size: 2.4rem;
 }
+/* A screen has no pen: there the margin note is the app's own subtitle. */
 :root[data-world] [data-page="simulasi"] .hand {
-  font-size: 1.25rem;
+  font: 600 1rem/1.4 var(--font-sans);
+  color: var(--muted);
+  rotate: none;
 }
 :root[data-world] [data-page="simulasi"] h1 ~ p:not(.hand) {
   margin-top: 0.75rem;
@@ -1128,13 +978,19 @@ body {
   border-radius: 999px;
   padding-inline: 1.1rem;
 }
-:root[data-world] [data-page="simulasi"] .chat .btn-main {
+:root[data-world] [data-page="simulasi"] .btn {
   border-radius: 999px;
 }
+:root[data-world] [data-page="simulasi"] .panel {
+  border: 0;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--ink) 5%, var(--card));
+}
 
-/* The card: a flash card with a ruled frame and its suit in the corner. The question flips on the card itself. */
+/* The card: the sage top card of the stack, with a ruled frame and its suit in the corner. The question flips on
+   the card itself, and its answers are lettered like a quiz card's. */
 :root[data-world] [data-page="latihan"] {
-  background: var(--grain) var(--card);
+  background: var(--grain) color-mix(in srgb, var(--card) 80%, var(--good));
 }
 :root[data-world] [data-page="latihan"]::before {
   content: "?";
@@ -1155,6 +1011,20 @@ body {
   border-color: transparent;
   background: none;
   padding-inline: 0;
+  counter-reset: pilihan;
+}
+:root[data-world] [data-page="latihan"] .choice {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+  border-width: 1.5px;
+  counter-increment: pilihan;
+}
+:root[data-world] [data-page="latihan"] .choice::before {
+  content: counter(pilihan, upper-alpha);
+  flex: none;
+  font-weight: 800;
+  color: var(--muted);
 }
 
 /* The folder: a sheet clipped inside it, with a margin line down the left. */
@@ -1177,9 +1047,17 @@ body {
   pointer-events: none;
 }
 
-/* The clipboard: a clean checklist sheet, under the board's own clip. */
+/* The clipboard: the checklist is the sheet itself, under the board's own clip, its groups ruled off. */
 :root[data-world] [data-page="amankan"] {
   background: var(--grain) var(--card);
+}
+:root[data-world] [data-page="amankan"] .panel {
+  border: 0;
+  padding-inline: 0;
+}
+:root[data-world] [data-page="amankan"] .panel h3 {
+  padding-bottom: 0.35rem;
+  border-bottom: 1.5px solid var(--line);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1195,19 +1073,5 @@ body {
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation: none !important;
-  }
-  .phone-rig {
-    transform: rotateX(9deg) rotateY(-15deg) rotateZ(1.5deg);
-  }
-  .marquee-track {
-    flex-wrap: wrap;
-    width: auto;
-    animation: none;
-  }
-  .marquee li[aria-hidden="true"] {
-    display: none;
-  }
-  .rise-in {
-    animation: none;
   }
 }

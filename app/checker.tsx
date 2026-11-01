@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { analyze, CONTEXT, MAX_LENGTH, type Result } from "@/lib/analyze";
 import Marked from "./marked";
-import Phone from "./phone";
+import Contoh from "./contoh";
 import AIOpinionCard from "./ai-opinion";
 
 type State =
@@ -248,17 +248,15 @@ export default function Checker({ aiReady }: { aiReady: boolean }) {
             <h2 id="hasil" className="sr-only">
               Belum ada yang diperiksa
             </h2>
-            <Phone />
-            <p className="mx-auto mt-2 max-w-md text-center leading-relaxed text-muted">
-              Begini hasilnya nanti: bagian yang mencurigakan ditandai, lalu dijelaskan satu per satu. Belum punya pesan? Coba contoh fiktif ini.
-            </p>
-            <div className="mt-5 flex flex-wrap justify-center gap-3">
-              {SAMPLES.map((s, i) => (
+            <p className="mb-3 leading-relaxed text-muted">Begini hasilnya nanti: bagian yang mencurigakan ditandai, lalu dijelaskan satu per satu.</p>
+            <Contoh />
+            <p className="mt-6 font-bold">Belum punya pesan? Coba contoh fiktif ini.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {SAMPLES.map((s) => (
                 <button
                   key={s.label}
                   type="button"
-                  className="btn sticker"
-                  style={{ "--tilt": `${[-3, 2, -1.5, 3, -2, 2.5, -1][i]}deg` } as React.CSSProperties}
+                  className="btn"
                   onClick={() => {
                     setText(s.text);
                     setCtx([]);
@@ -390,7 +388,7 @@ function Report({
                   onMouseLeave={() => onHover(null)}
                   onFocus={() => onHover(f.id)}
                   onBlur={() => onHover(null)}
-                  className="block w-full rounded-xl border-2 border-line p-4 text-left transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--shadow)] active:translate-y-0 active:shadow-none aria-pressed:bg-[var(--hl-bg)]"
+                  className="block w-full rounded-xl border-2 border-line p-4 text-left transition-colors duration-200 hover:bg-[var(--hl-bg)] aria-pressed:bg-[var(--hl-bg)]"
                 >
                   <span className="flex flex-wrap items-baseline justify-between gap-x-3">
                     <span className="font-bold">{f.label}</span>

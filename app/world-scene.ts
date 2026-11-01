@@ -520,7 +520,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     },
     cards(g) {
       const sheet = group(g);
-      const green = c.card.clone().lerp(c.good, 0.55);
+      const green = c.card.clone().lerp(c.good, 0.3); // the page lying on it is the same sage, a little paler
       shadow(sheet, 0.2, 0.28);
       // The top card is centred on the stretch, so stretching never slides the page off it.
       for (let i = 0; i < 4; i++) part(sheet, slab(0.2, 0.28, 0.012, 0.018), i === 3 ? green : c.card, 0, 0.008 + i * 0.013, (i - 3) * 0.002);

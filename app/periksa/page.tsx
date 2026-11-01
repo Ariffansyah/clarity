@@ -28,22 +28,20 @@ export default function Periksa() {
     <>
       <Checker aiReady={!!process.env.GROQ_API_KEY} />
 
-      <section aria-labelledby="kalimat" className="rise-in mt-28">
+      <section aria-labelledby="kalimat" className="mt-20">
         <h2 id="kalimat" className="hand text-3xl">
           kalimat favorit penipu
         </h2>
         <p className="mt-2 max-w-xl leading-relaxed text-muted">
           Kalau kamu membaca salah satu kalimat ini, berhenti sebentar dan cek dulu.
         </p>
-        <div className="marquee mt-5">
-          <ul className="marquee-track">
-            {[...PHRASES, ...PHRASES].map((t, i) => (
-              <li key={i} aria-hidden={i >= PHRASES.length || undefined}>
-                <mark className="hl">{t}</mark>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ul className="mt-5 grid gap-x-6 gap-y-2.5 font-semibold @min-[592px]:grid-cols-2">
+          {PHRASES.map((t) => (
+            <li key={t}>
+              <mark className="hl">{t}</mark>
+            </li>
+          ))}
+        </ul>
       </section>
     </>
   );
