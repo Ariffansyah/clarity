@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { analyze, CONTEXT, MAX_LENGTH, type Result } from "@/lib/analyze";
+import { STAGES, stagesFor } from "@/lib/peta";
 import Marked from "./marked";
 import Contoh from "./contoh";
 import AIOpinionCard from "./ai-opinion";
+import Stamp from "./stamp";
 
 type State =
   | { status: "idle" }
@@ -345,6 +347,7 @@ function Report({
     );
   }
   const guide = result.flags.map((f) => ACT[f.id]).find(Boolean);
+  const stages = stagesFor(result.flags.map((f) => f.id));
   // No quotes from the message itself: its links would turn clickable in WhatsApp.
   const share = [`Aku cek pesan mencurigakan pakai Clarity. Hasilnya: ${level.name}.`, ...result.flags.map((f) => `- ${f.label}`), tips[0]].join("\n");
   let i = 0;
@@ -354,7 +357,8 @@ function Report({
       <div style={{ "--i": i++ } as React.CSSProperties}>
         <p className="text-sm font-semibold text-muted">Hasil pemeriksaan</p>
         <h2 id="hasil" className="mt-1 text-3xl font-extrabold tracking-tight @min-[592px]:text-4xl" style={{ color: level.color }}>
-          {level.name}
+          {/* A stamp reads as certain, and finding nothing proves nothing: that verdict stays plain words. */}
+          {result.level > 0 ? <Stamp color={level.color}>{level.name}</Stamp> : level.name}
         </h2>
         <div className="meter mt-4 max-w-xs" role="img" aria-label={`Tingkat ${result.level} dari 3`}>
           {SEGMENTS.map((c, n) => (
@@ -407,6 +411,23 @@ function Report({
         </div>
       )}
 
+      {stages.length > 0 && (
+        <div style={{ "--i": i++ } as React.CSSProperties}>
+          <h3 className="font-bold">Pola yang cocok</h3>
+          <p className="mt-1 text-sm text-muted">Bagian dari peta tipuan yang muncul di pesan ini, dan cara mematahkannya.</p>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {stages.map((s) => (
+              <li key={s.id}>
+                <Link href={`/peta#${s.id}`} className="pola">
+                  <span aria-hidden>{STAGES.indexOf(s) + 1}</span>
+                  {s.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {result.links.length > 0 && (
         <div style={{ "--i": i++ } as React.CSSProperties}>
           <h3 className="font-bold">Tautan di pesan ini</h3>
@@ -447,7 +468,7 @@ function Report({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-3 border-t-2 border-line pt-6" style={{ "--i": i++ } as React.CSSProperties}>
+      <div className="grid gap-3 border-t-2 border-line pt-6 @min-[592px]:flex @min-[592px]:flex-wrap" style={{ "--i": i++ } as React.CSSProperties}>
         {result.level > 0 && (
           <Link href={guide ? `/bertindak#${guide}` : "/bertindak"} className="btn">
             Sudah terlanjur menanggapi?

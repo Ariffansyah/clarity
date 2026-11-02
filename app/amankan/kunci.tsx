@@ -73,7 +73,7 @@ export function KataSandi() {
     <div className="space-y-8">
       <div className="rounded-[18px] border-2 border-line p-5 @min-[592px]:p-7">
         <p className="font-bold">Usulan kata sandi</p>
-        <p className="hand mt-2 min-h-12 text-4xl" aria-live="polite">
+        <p className="hand mt-2 block min-h-12 text-4xl" aria-live="polite">
           {kata ?? "…"}
         </p>
         <button type="button" className="btn btn-main mt-4" onClick={acak}>

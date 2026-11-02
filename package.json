@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test lib/analyze.test.ts lib/desk.test.ts"
+    "test": "node --test lib/analyze.test.ts lib/desk.test.ts lib/peta.test.ts"
   },
   "dependencies": {
     "next": "16.4.3",

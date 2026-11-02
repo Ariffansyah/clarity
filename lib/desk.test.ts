@@ -14,6 +14,7 @@ test("every page maps to its desk, nested paths included", () => {
   assert.equal(routeOf("/periksa"), "periksa");
   assert.equal(routeOf("/bertindak/apa"), "bertindak");
   assert.equal(routeOf("/amankan"), "amankan");
+  assert.equal(routeOf("/peta"), "peta");
   assert.equal(routeOf("/tidak-ada"), "lain");
   assert.equal(routeOf("/periksa-palsu"), "lain");
 });
@@ -37,7 +38,7 @@ test("easing starts and ends in the right place", () => {
   assert.equal(easeOut(1), 1);
 });
 
-test("an open page fits on screen below the way back, and the chat stays tablet-shaped", () => {
+test("an open page fits on screen below the way back, and the chat stays tablet-shaped on a desktop", () => {
   for (const [w, h] of [[390, 844], [1440, 900], [820, 1180], [1024, 600]]) {
     for (const route of ["periksa", "simulasi"] as const) {
       const r = pageRect(route, w, h);
@@ -47,4 +48,5 @@ test("an open page fits on screen below the way back, and the chat stays tablet-
   const tablet = pageRect("simulasi", 1440, 900);
   assert.ok(Math.abs(tablet.height / tablet.width - 4 / 3) < 0.01, "3:4 on a desktop");
   assert.ok(pageRect("periksa", 1440, 900).width > tablet.width);
+  assert.equal(pageRect("simulasi", 390, 844).height, pageRect("periksa", 390, 844).height, "a phone's tablet is as tall as the screen allows");
 });

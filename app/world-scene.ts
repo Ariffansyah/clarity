@@ -12,12 +12,15 @@ type Spot = [x: number, z: number];
 // `narrow` is where it lies on a phone: across the screen (-1 to 1, so the two columns of labels never meet on any
 // phone) and depth on the desk, the standing tablet at the back so it hides no label. `lean` is how far from square on you see it while
 // reading, in radians: towards you over a page lying flat, a little round the side of the tablet.
-const THINGS: { model: string; name: string; href: string; wide: Spot; narrow: Spot; lean: [pitch: number, yaw: number] }[] = [
+// A thing with no `narrow` spot hangs on the wall, right where `wide` puts it, and only on wide screens: a phone sees
+// the wall only behind the home page's text.
+const THINGS: { model: string; name: string; href: string; wide: Spot; narrow?: Spot; lean: [pitch: number, yaw: number] }[] = [
   { model: "printout", name: "Cek Pesan", href: "/periksa", wide: [-0.6, -0.03], narrow: [-0.5, -0.02], lean: [0.26, 0] },
   { model: "cards", name: "Latihan", href: "/latihan", wide: [-0.2, -0.23], narrow: [0.5, -0.42], lean: [0.26, 0] },
   { model: "tablet", name: "Simulasi", href: "/simulasi", wide: [0.2, -0.24], narrow: [-0.5, -0.45], lean: [-0.06, 0.14] },
   { model: "clipboard", name: "Amankan Akun", href: "/amankan", wide: [0, 0.2], narrow: [0.5, -0.02], lean: [0.26, 0] },
   { model: "folder", name: "Sudah Terlanjur?", href: "/bertindak", wide: [0.66, 0.04], narrow: [0, 0.36], lean: [0.26, 0] },
+  { model: "pinboard", name: "Peta Tipuan", href: "/peta", wide: [-0.62, -0.97], lean: [-0.06, 0.12] },
 ];
 
 const PHONE = { wide: [-0.95, -0.42], narrow: [0, -0.52] } as const;
@@ -36,10 +39,11 @@ const ANCHORS: Record<string, { wide: Spot; narrow: Spot }> = {
 };
 
 // Where a page lies on its thing. `face` is the rectangle the page covers: +y towards the page's top, +z out of it.
-// `sheet` is the part that stretches along `axis` to take the page's shape on this screen.
+// `sheet` is the part that stretches along `axis` to take the page's shape on this screen: its length (y or z), or,
+// for something that must stay inside a frame, its width (x).
 // `open` poses the thing from shut (0) to open (1) as you pick it up. It never moves the face, so the page lands
 // where the camera aimed, and by halfway it has wiped what is drawn under the face, so the page never fades in over it.
-type Face = { sheet: THREE.Object3D; axis: "y" | "z"; face: THREE.Object3D; open?: (o: number) => void };
+type Face = { sheet: THREE.Object3D; axis: "x" | "y" | "z"; face: THREE.Object3D; open?: (o: number) => void };
 
 type Palette = ReturnType<typeof palette>;
 
@@ -280,45 +284,6 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   part(room, box(0.012, 0.38, 0.012), rc.trim, 0.55, 0.41, -0.993);
   part(room, box(0.52, 0.012, 0.012), rc.trim, 0.55, 0.43, -0.993);
   part(room, box(0.66, 0.022, 0.07), rc.trim, 0.55, 0.19, -0.995);
-
-  // A pinboard leaning on the wall at the back of the desk: notes, red pins and the red string between them,
-  // the way you would piece a scam together. Each note is a tip, scrawled in the app's red-pen hand.
-  const board = group(room);
-  lowWall.push(board);
-  board.position.set(-0.62, 0, -0.97);
-  board.rotation.x = -0.08;
-  part(board, box(0.6, 0.32, 0.025), rc.trim, 0, 0.16, 0);
-  part(board, box(0.56, 0.28, 0.01), rc.cork, 0, 0.16, 0.014);
-  const pins: THREE.Vector3[] = [];
-  const hand = getComputedStyle(document.documentElement).getPropertyValue("--font-kalam").trim() || "cursive";
-  for (const [x, y, w, color, spin, tip] of [
-    [-0.19, 0.22, 0.1, c.card, 0.06, "OTP itu\nrahasia!"],
-    [-0.04, 0.12, 0.09, c.hl, -0.08, "Jangan\nburu-buru"],
-    [0.11, 0.21, 0.1, tone(c.card, c.good, 0.35), 0.05, "Cek dulu\nlink-nya"],
-    [0.2, 0.09, 0.08, tone(c.card, c.danger, 0.3), -0.1, "Bank tak\nminta PIN"],
-  ] as const) {
-    const note = part(board, box(w, w * 0.9, 0.003), color, x, y, 0.021);
-    note.rotation.z = spin;
-    const cv = Object.assign(document.createElement("canvas"), { width: 128, height: 116 });
-    const words = new THREE.CanvasTexture(cv);
-    words.colorSpace = THREE.SRGBColorSpace;
-    const written = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.92, w * 0.83), new THREE.MeshBasicMaterial({ map: words, transparent: true }));
-    written.position.set(0, -w * 0.06, 0.002);
-    note.add(written);
-    // Once the hand has loaded; if it never does, the fallback still writes the tip.
-    const write = () => {
-      const g = cv.getContext("2d")!;
-      g.fillStyle = color === c.hl ? "#17181c" : `#${c.ink.getHexString()}`; // yellow stays yellow in the dark
-      g.font = `700 27px ${hand}`;
-      g.textAlign = "center";
-      tip.split("\n").forEach((line, i) => g.fillText(line, 64, 52 + i * 34));
-      words.needsUpdate = dirty = true;
-    };
-    document.fonts.load(`700 27px ${hand}`).then(write, write);
-    const pin = blob(board, c.danger, [x, y + w * 0.38, 0.03], [0.009, 0.009, 0.009]);
-    pins.push(pin.position.clone());
-  }
-  board.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([pins[0], pins[1], pins[2], pins[3]]), new THREE.LineBasicMaterial({ color: c.danger })));
 
   // The lamp's warm pool of light (the phone stands in it), small enough to stay on the wood, off the desk pad.
   glow(room, c.hl, 0.3, -1.02, -0.45, 0.5);
@@ -707,6 +672,95 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       const open = (o: number) => (cover.rotation.z = Math.PI * o);
       return { sheet, axis: "z", face: faceOn(sheet, 0.3, 0.38, 0, 0.013, 0, true), open };
     },
+    // A pinboard leaning on the wall at the back of the desk: notes, red pins and the red string between them,
+    // the way you would piece a scam together. Each note is a tip, scrawled in the app's red-pen hand. Pinned in the
+    // middle, the map of how scams are built, folded in three: opening, its outer panels swing out flat either side,
+    // and it widens to the page's shape, never taller than the cork, so the page lies on the board, not over it.
+    pinboard(g) {
+      const board = group(g);
+      board.rotation.x = -0.08;
+      part(board, box(0.6, 0.32, 0.025), rc.trim, 0, 0.16, 0);
+      part(board, box(0.56, 0.28, 0.01), rc.cork, 0, 0.16, 0.014);
+      const pins: THREE.Vector3[] = [];
+      const hand = getComputedStyle(document.documentElement).getPropertyValue("--font-kalam").trim() || "cursive";
+      for (const [x, y, w, color, spin, tip] of [
+        [-0.215, 0.22, 0.1, c.card, 0.06, "OTP itu\nrahasia!"],
+        [-0.21, 0.09, 0.09, c.hl, -0.08, "Jangan\nburu-buru"],
+        [0.21, 0.21, 0.1, tone(c.card, c.good, 0.35), 0.05, "Cek dulu\nlink-nya"],
+        [0.215, 0.09, 0.08, tone(c.card, c.danger, 0.3), -0.1, "Bank tak\nminta PIN"],
+      ] as const) {
+        const note = part(board, box(w, w * 0.9, 0.003), color, x, y, 0.021);
+        note.rotation.z = spin;
+        const cv = Object.assign(document.createElement("canvas"), { width: 128, height: 116 });
+        const words = new THREE.CanvasTexture(cv);
+        words.colorSpace = THREE.SRGBColorSpace;
+        const written = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.92, w * 0.83), new THREE.MeshBasicMaterial({ map: words, transparent: true }));
+        written.position.set(0, -w * 0.06, 0.002);
+        note.add(written);
+        // Once the hand has loaded; if it never does, the fallback still writes the tip.
+        const write = () => {
+          const g = cv.getContext("2d")!;
+          g.fillStyle = color === c.hl ? "#17181c" : `#${c.ink.getHexString()}`; // yellow stays yellow in the dark
+          g.font = `700 27px ${hand}`;
+          g.textAlign = "center";
+          tip.split("\n").forEach((line, i) => g.fillText(line, 64, 52 + i * 34));
+          words.needsUpdate = dirty = true;
+        };
+        document.fonts.load(`700 27px ${hand}`).then(write, write);
+        const pin = blob(board, c.danger, [x, y + w * 0.38, 0.03], [0.009, 0.009, 0.009]);
+        pins.push(pin.position.clone());
+      }
+      board.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([pins[0], pins[1], pins[2], pins[3]]), new THREE.LineBasicMaterial({ color: c.danger })));
+
+      // The map is the sheet; its middle panel stays put while the outer two swing out.
+      const [third, tall] = [0.075, 0.24];
+      const map = group(board);
+      map.position.set(0, 0.16, 0.026);
+      part(map, box(third, tall, 0.002), c.card, 0, 0, 0);
+      const [left, right] = [-1, 1].map((side, i) => {
+        const hinge = group(map);
+        hinge.position.set((side * third) / 2, 0, 0.0025 * (i + 1)); // the last fold lies over the first
+        part(hinge, box(third, tall, 0.002), c.card, (side * third) / 2, 0, 0);
+        return hinge;
+      });
+      // Its cover, on the outside of the last fold: a red route down a column of stops, as on the page.
+      const cv = Object.assign(document.createElement("canvas"), { width: 64, height: 210 });
+      const pen = cv.getContext("2d")!;
+      const [inkHex, red] = [`#${c.ink.getHexString()}`, `#${c.danger.getHexString()}`];
+      pen.fillStyle = inkHex;
+      pen.fillRect(10, 10, 44, 9);
+      pen.strokeStyle = red;
+      pen.lineWidth = 3;
+      pen.setLineDash([6, 5]);
+      pen.beginPath();
+      pen.moveTo(18, 46);
+      pen.lineTo(18, 186);
+      pen.stroke();
+      pen.setLineDash([]);
+      for (const y of [46, 116, 186]) {
+        pen.beginPath();
+        pen.arc(18, y, 7, 0, Math.PI * 2);
+        pen.fillStyle = `#${c.card.getHexString()}`;
+        pen.fill();
+        pen.stroke();
+        pen.fillStyle = inkHex;
+        pen.fillRect(32, y - 3, 22, 5);
+      }
+      const art = new THREE.CanvasTexture(cv);
+      art.colorSpace = THREE.SRGBColorSpace;
+      const cover = new THREE.Mesh(new THREE.PlaneGeometry(third * 0.9, tall * 0.92), new THREE.MeshBasicMaterial({ map: art, transparent: true }));
+      cover.rotation.y = Math.PI; // out of the panel's back, which faces you once it is folded over
+      cover.position.set(third / 2, 0, -0.0012);
+      right.add(cover);
+      const pin = blob(map, c.danger, [0, tall / 2 - 0.016, 0.012], [0.009, 0.009, 0.009]);
+      const open = (o: number) => {
+        left.rotation.y = Math.PI * (1 - o);
+        right.rotation.y = -Math.PI * (1 - o);
+        pin.visible = o < 0.5;
+      };
+      open(0);
+      return { sheet: map, axis: "x", face: faceOn(map, third * 3, tall, 0, 0, 0.008, false), open };
+    },
   };
 
   const things = THINGS.map((t) => {
@@ -716,8 +770,9 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     return { ...t, g, ...models[t.model](g), kFrom: 1, kTo: 1, o: 0, oFrom: 0, oTo: 0 };
   });
   const clickable = things.map((t) => t.g);
-  // A page with no thing of its own (not found) lies on the printout.
-  const thingFor = (r: Route) => (r === "home" ? undefined : things.find((t) => t.href === `/${r === "lain" ? "periksa" : r}`));
+  // A page with no thing of its own (not found) lies on the printout; so does the map on a phone, which has no wall.
+  const thingFor = (r: Route) =>
+    r === "home" ? undefined : things.find((t) => t.href === `/${r === "lain" || (r === "peta" && narrow) ? "periksa" : r}`);
 
   const desk = buildPhone(c.line, getComputedStyle(document.body).fontFamily);
   scene.add(desk.phone);
@@ -765,7 +820,9 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   const layout = () => {
     for (const t of things) {
       const spot = narrow ? t.narrow : t.wide;
-      t.g.position.set(across(spot), hover === t.href ? 0.015 : 0, spot[1]);
+      t.g.visible = !!spot;
+      if (!spot) continue;
+      t.g.position.set(t.narrow ? across(spot) : spot[0], hover === t.href ? 0.015 : 0, spot[1]); // the wall stays put
       t.g.scale.setScalar(narrow ? 0.62 : 1); // a phone has room for far less desk
     }
     const spot = narrow ? PHONE.narrow : PHONE.wide;
@@ -797,7 +854,11 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       to.quat.copy(lookHome);
       return;
     }
-    open.kTo = (rect.height / rect.width) * (open.face.scale.x / open.face.scale.y);
+    const k = (rect.height / rect.width) * (open.face.scale.x / open.face.scale.y);
+    open.kTo = open.axis === "x" ? 1 / k : k;
+    // Measured as it will lie once stretched: a wider face is seen from further back.
+    const now = open.sheet.scale[open.axis];
+    open.sheet.scale[open.axis] = open.kTo;
     scene.updateMatrixWorld(true);
     const f = open.face.matrixWorld;
     const p = planeFromRect(rect, canvas.clientWidth, canvas.clientHeight, camera.fov, 1);
@@ -808,6 +869,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     to.pos.setFromMatrixPosition(f).addScaledVector(n, d).addScaledVector(r, -p.x * d).addScaledVector(u, -p.y * d);
     to.quat.setFromRotationMatrix(mtx.makeBasis(r, u, n));
     focus.setFromMatrixPosition(f);
+    open.sheet.scale[open.axis] = now;
     // A phone's screen has little room to lean into, and turning a narrow page sideways slants every line.
     orbit(to.pos, to.quat, narrow ? 0 : open.lean[1], open.lean[0] * (narrow ? 0.35 : 1), r);
   };
@@ -837,7 +899,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
         return [a, b, a * y + b * z];
       };
       const tablet = THINGS.find((t) => t.model === "tablet")!;
-      const [a1, b1, c1] = line(TABLET_TOP, tablet.narrow[1] - 0.03, headFoot * h);
+      const [a1, b1, c1] = line(TABLET_TOP, tablet.narrow![1] - 0.03, headFoot * h);
       const [a2, b2, c2] = line(0, ANCHORS["/bertindak"].narrow[1], h - 76);
       const det = a1 * b2 - a2 * b1;
       eye.set(0, (c1 * b2 - c2 * b1) / det, (a1 * c2 - a2 * c1) / det);
@@ -920,7 +982,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     }
   };
 
-  // While reading, the other things on the desk say what they open when you point at them.
+  // While reading, the other things say what they open when you point at them; at the desk, so does the pinboard.
   const tip = Object.assign(document.createElement("p"), { className: "meja-tip", hidden: true });
   tip.setAttribute("aria-hidden", "true"); // the same choices are real links on the home page
   document.body.append(tip);
@@ -929,7 +991,8 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   const propAt = (e: PointerEvent) => {
     const b = canvas.getBoundingClientRect();
     ray.setFromCamera(new THREE.Vector2(((e.clientX - b.left) / b.width) * 2 - 1, -((e.clientY - b.top) / b.height) * 2 + 1), camera);
-    let o: THREE.Object3D | null = ray.intersectObjects(clickable, true)[0]?.object ?? null;
+    // Hidden things still catch rays: only what is shown can be clicked.
+    let o: THREE.Object3D | null = ray.intersectObjects(clickable.filter((g) => g.visible), true)[0]?.object ?? null;
     while (o && !o.userData.href) o = o.parent;
     const href = (o?.userData.href as string | undefined) ?? null;
     return href === thingFor(route)?.href ? null : href; // the page you are reading is already open
@@ -946,7 +1009,8 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     const label = (e.target as Element).closest?.("[data-anchor]")?.getAttribute("data-anchor") ?? null;
     const next = label ?? (onCanvas ? propAt(e) : null);
     if (onCanvas) canvas.style.cursor = next ? "pointer" : "";
-    const name = route !== "home" && next ? THINGS.find((t) => t.href === next)?.name : undefined;
+    // On the desk the home page's labels already say it; the wall has none.
+    const name = next && (route !== "home" || !ANCHORS[next]) ? THINGS.find((t) => t.href === next)?.name : undefined;
     tip.hidden = !name;
     if (name) {
       tip.textContent = name;

@@ -15,7 +15,12 @@ export default function Home() {
         Mau buka <mark className="hl">berkas</mark> yang mana?
       </h1>
       <p className="mt-4 max-w-xl text-lg leading-relaxed text-muted">
-        Semuanya ada di meja ini. Klik salah satu untuk membukanya.
+        Semuanya ada di meja ini. Klik salah satu untuk membukanya, atau{" "}
+        {/* The home page lets clicks through to the desk; this link takes them back. */}
+        <Link href="/peta" className="pointer-events-auto font-semibold text-ink underline decoration-2 underline-offset-[0.2em] hover:bg-[var(--hl-bg)]">
+          baca peta tipuannya dulu
+        </Link>
+        .
       </p>
 
       <ul className="meja-links mt-8">

@@ -1,11 +1,11 @@
 // The desk world's rules. No Three.js here, so they can be tested in plain Node.
 
-export type Route = "home" | "periksa" | "latihan" | "simulasi" | "amankan" | "bertindak" | "lain";
+export type Route = "home" | "periksa" | "latihan" | "simulasi" | "amankan" | "bertindak" | "peta" | "lain";
 
 export function routeOf(path: string): Route {
   if (path === "/") return "home";
   const first = path.split("/")[1];
-  return first === "periksa" || first === "latihan" || first === "simulasi" || first === "amankan" || first === "bertindak" ? first : "lain";
+  return first === "periksa" || first === "latihan" || first === "simulasi" || first === "amankan" || first === "bertindak" || first === "peta" ? first : "lain";
 }
 
 /** Where a page's on-screen box sits on a camera-facing plane `dist` in front of the camera. */
@@ -33,8 +33,8 @@ export function pageRect(route: Route, viewW: number, viewH: number) {
   const top = 72; // room for the way back to the desk
   const room = viewH - top - (narrow ? 40 : 72); // the page is seen leaning, so its near edge needs room to grow
   const width = Math.min(route === "simulasi" ? Math.round(room * 0.75) : 680, viewW - side * 2);
-  // On a phone the tablet may stand a little taller than 3:4, so its page still gets most of the screen.
-  const height = Math.round(route === "simulasi" ? Math.min(room, width * 1.75) : room);
+  // On a phone the tablet stands as tall as the screen allows, so its chat gets the whole screen.
+  const height = Math.round(route === "simulasi" && !narrow ? Math.min(room, width * 1.75) : room);
   return { left: Math.round((viewW - width) / 2), top: top + Math.round((room - height) / 2), width, height };
 }
 

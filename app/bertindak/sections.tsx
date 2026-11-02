@@ -7,7 +7,7 @@ export default function Sections() {
         <Guide />
       </div>
 
-      <section id="peringatkan" aria-labelledby="judul-peringatkan" className="mt-24 scroll-mt-6">
+      <section id="peringatkan" aria-labelledby="judul-peringatkan" className="mt-16 scroll-mt-6 @min-[592px]:mt-24">
         <h2 id="judul-peringatkan" className="text-3xl font-extrabold tracking-tight @min-[592px]:text-4xl">
           Peringatkan teman dan keluarga
         </h2>
@@ -20,7 +20,7 @@ export default function Sections() {
         </div>
       </section>
 
-      <section id="lapor" aria-labelledby="judul-lapor" className="mt-24 scroll-mt-6">
+      <section id="lapor" aria-labelledby="judul-lapor" className="mt-16 scroll-mt-6 @min-[592px]:mt-24">
         <h2 id="judul-lapor" className="text-3xl font-extrabold tracking-tight @min-[592px]:text-4xl">
           Saluran resmi untuk melapor
         </h2>

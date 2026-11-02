@@ -23,7 +23,7 @@ export default function Amankan() {
         <Checklist />
       </div>
 
-      <section id="kata-sandi" aria-labelledby="judul-kata-sandi" className="mt-24 scroll-mt-6">
+      <section id="kata-sandi" aria-labelledby="judul-kata-sandi" className="mt-16 scroll-mt-6 @min-[592px]:mt-24">
         <h2 id="judul-kata-sandi" className="text-3xl font-extrabold tracking-tight @min-[592px]:text-4xl">
           Kata sandi keluarga
         </h2>

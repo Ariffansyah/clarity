@@ -18,6 +18,10 @@
   --good: #1e6b4e;
   --tape: rgb(255 238 178 / 0.8);
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* A box drawn in ink by hand, for border-image: the round-cornered one for what is on a page, the square one for
+     the page's own edge. The stroke is the theme's line colour, so each theme has its own pair. */
+  --ink-box: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Cpath d='M8.4 1.5C16 1.1 32 1.9 39.6 1.3Q46.6 1.2 46.5 8.4C46.9 16 46.2 32 46.7 39.6Q46.8 46.7 39.6 46.5C32 46.9 16 46.1 8.4 46.6Q1.4 46.7 1.3 39.6C1 32 1.8 16 1.3 8.4Q1.4 1.6 8.4 1.5Z' fill='none' stroke='%2317181c' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --ink-sheet: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Cpath d='M3.5 1.4C16 1.1 32 1.8 44.5 1.3Q46.7 1.3 46.6 3.5C46.9 16 46.2 32 46.7 44.5Q46.7 46.7 44.5 46.6C32 46.9 16 46.2 3.5 46.6Q1.3 46.7 1.4 44.5C1.1 32 1.8 16 1.3 3.5Q1.3 1.3 3.5 1.4Z' fill='none' stroke='%2317181c' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 /* Set before first paint by the script in the layout: the saved choice, else the system's setting. */
@@ -36,6 +40,8 @@
     --good: #5bc79a;
     --tape: rgb(255 255 255 / 0.16);
     --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    --ink-box: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Cpath d='M8.4 1.5C16 1.1 32 1.9 39.6 1.3Q46.6 1.2 46.5 8.4C46.9 16 46.2 32 46.7 39.6Q46.8 46.7 39.6 46.5C32 46.9 16 46.1 8.4 46.6Q1.4 46.7 1.3 39.6C1 32 1.8 16 1.3 8.4Q1.4 1.6 8.4 1.5Z' fill='none' stroke='%236b6f78' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --ink-sheet: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Cpath d='M3.5 1.4C16 1.1 32 1.8 44.5 1.3Q46.7 1.3 46.6 3.5C46.9 16 46.2 32 46.7 44.5Q46.7 46.7 44.5 46.6C32 46.9 16 46.2 3.5 46.6Q1.3 46.7 1.4 44.5C1.1 32 1.8 16 1.3 3.5Q1.3 1.3 3.5 1.4Z' fill='none' stroke='%236b6f78' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 @theme inline {
@@ -498,12 +504,16 @@ body {
   margin: 0;
   transform-origin: 0 0;
 }
-/* Shaded like the thing it lies on: lit from the lamp's side, falling off away from it. */
+/* Shaded like the thing it lies on: lit from the lamp's side, falling off away from it. Over the words too, as the
+   desk's own painting is: the paper's grain and a picture book's soft vignette. */
 :root[data-world] .lembar-wrap:not([data-page="home"])::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(160deg, transparent 35%, rgb(0 0 0 / 0.07));
+  background:
+    var(--grain),
+    radial-gradient(ellipse at 50% 40%, transparent 60%, rgb(0 0 0 / 0.08)),
+    linear-gradient(160deg, transparent 35%, rgb(0 0 0 / 0.07));
   pointer-events: none;
 }
 .lembar {
@@ -578,6 +588,12 @@ body {
 @media (max-width: 767px) {
   .lembar-wrap[data-page="home"] h1 {
     padding-right: 3rem;
+  }
+}
+/* Phones: the window on the wall can stand behind the intro's lines, so its words keep a margin of paper round them. */
+@media (max-width: 767px) {
+  :root[data-world] .lembar-wrap[data-page="home"] h1 + p {
+    text-shadow: 0 0 2px var(--paper), 0 0 5px var(--paper), 0 0 9px var(--paper);
   }
 }
 /* What a thing on the desk opens, beside the pointer, while you read another page. */
@@ -758,6 +774,160 @@ body {
   color: #17181c;
 }
 
+/* ---------- Verdict stamp: inked onto the page, with a thump ---------- */
+.stamp {
+  display: inline-block;
+  max-width: 100%;
+  margin-block: 0.2em;
+  padding: 0.3em 0.6em 0.25em;
+  border: 0.3em double var(--stamp);
+  border-radius: 0.3em;
+  color: var(--stamp);
+  font-size: clamp(1.05rem, 5cqi, 1.55rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  rotate: -4deg;
+  /* The ink takes the paper's grain: pale patches where the stamp did not press evenly. */
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -5 0 0 0 3.7'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") 0 0 / 160px;
+  animation: thump 0.45s both;
+}
+@keyframes thump {
+  from {
+    opacity: 0;
+    scale: 1.8;
+    animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.5);
+  }
+  55% {
+    opacity: 1;
+    scale: 0.95;
+  }
+  to {
+    scale: 1;
+  }
+}
+/* The card's flip takes 0.75s and has settled by 0.6s: the stamp waits for it. */
+.flip-back .stamp {
+  animation-delay: 0.6s;
+}
+
+/* ---------- Peta tipuan: a map folded out of the printout, a red-pen route down its left ---------- */
+.peta-map {
+  padding: 1.25rem 0.4rem 1.5rem;
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  /* Its fold lines: one down the middle, one every panel across, and the two halves catching the light differently. */
+  background:
+    linear-gradient(90deg, transparent calc(50% - 1px), color-mix(in srgb, var(--ink) 9%, transparent) 50%, transparent calc(50% + 1px)),
+    repeating-linear-gradient(transparent 0 calc(24rem - 1px), color-mix(in srgb, var(--ink) 9%, transparent) calc(24rem - 1px) 24rem),
+    linear-gradient(90deg, transparent 50%, color-mix(in srgb, var(--ink) 3%, transparent) 50%),
+    var(--grain) var(--card);
+}
+.peta {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2rem;
+  padding-left: 2.4rem;
+}
+.peta::before {
+  content: "";
+  position: absolute;
+  top: 1.5rem;
+  bottom: 1.5rem;
+  left: calc(1rem - 1.5px);
+  border-left: 3px dashed var(--danger);
+}
+.peta-stop {
+  position: relative;
+  scroll-margin-top: 1rem;
+}
+.peta-no,
+.pola > span {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 2.5px solid var(--danger);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--danger);
+  font: 700 1.1rem/1 var(--font-hand);
+}
+.peta-no {
+  position: absolute;
+  top: 0.9rem;
+  left: -2.4rem;
+  transition: background-color 0.3s, color 0.3s;
+}
+.peta-card {
+  padding: 0.9rem 0.8rem 1.1rem;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  transition: box-shadow 0.3s;
+}
+.peta-card .bubble {
+  padding-inline: 0.75rem;
+}
+/* The stop a link points at. */
+.peta-stop[data-here="true"] .peta-no {
+  background: var(--danger);
+  color: var(--card);
+}
+.peta-stop[data-here="true"] .peta-card {
+  box-shadow: 6px 6px 0 var(--hl);
+}
+.peta-note {
+  margin: 2.25rem 0.5rem 0 2.4rem;
+  max-width: 28rem;
+  font-size: 1.35rem;
+  line-height: 1.3;
+}
+@container (min-width: 592px) {
+  .peta-map {
+    padding: 2rem 1.75rem;
+  }
+  .peta {
+    gap: 2.5rem;
+    padding-left: 4rem;
+  }
+  .peta::before {
+    left: calc(1.5rem - 1.5px);
+  }
+  .peta-no {
+    left: -4rem;
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.5rem;
+  }
+  .peta-card {
+    padding: 1.5rem 1.75rem;
+  }
+  .peta-note {
+    margin-left: 4rem;
+    font-size: 1.6rem;
+  }
+}
+
+/* Where a checked message sits on the map: links to its stops, numbered as on the route. */
+.pola {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.95rem 0.3rem 0.35rem;
+  border: 2px dashed var(--danger);
+  border-radius: 999px;
+  font-weight: 700;
+  transition: background-color 0.2s;
+}
+.pola:hover {
+  background: var(--hl-bg);
+}
+
 } /* end components */
 
 /* ---------- On the desk: each page dressed as the thing it lies on ----------
@@ -795,19 +965,79 @@ body {
   display: none;
 }
 
-/* Paper things (the printout, the sheet in the folder, the clipboard's checklist): what is on them is printed, in
-   thin ink lines with small corners. */
-:root[data-world] :is([data-page="periksa"], [data-page="bertindak"], [data-page="amankan"]) :is(.btn, .choice, .field, .panel, .ai-card, .scan-card, .border-2) {
+/* Paper things (the printout, the sheet in the folder, the clipboard's checklist): what is on them is printed, with
+   small corners. */
+:root[data-world] :is([data-page="periksa"], [data-page="peta"], [data-page="bertindak"], [data-page="amankan"]) :is(.btn, .choice, .field, .panel, .ai-card, .scan-card, .border-2) {
   border-width: 1.5px;
   border-radius: 4px;
 }
-:root[data-world] :is([data-page="periksa"], [data-page="bertindak"], [data-page="amankan"]) .panel {
+:root[data-world] :is([data-page="periksa"], [data-page="peta"], [data-page="bertindak"], [data-page="amankan"]) .panel {
   background: none;
+}
+
+/* Drawn like the desk round them: every outline on a page is a pen stroke in the study's own ink, a little unsteady,
+   and the page is outlined where it lies on its thing. One drawn box, its corners kept and its sides stretched, so a
+   stroke has the same weight round a checkbox and round a whole page. Its width is a multiple of the border's, so
+   printed paper gets a finer pen, and nothing is drawn where there is no border. */
+:root[data-world] .lembar-wrap:not([data-page="home"]) {
+  border: 2px solid;
+  border-image: var(--ink-sheet) 12 / 9 stretch;
+}
+:root[data-world] .lembar-wrap:not([data-page="home"]) :is(.btn, .choice, .field, .panel, .bubble, .chip, .check, .scan-card, .peta-card, .peta-map, .border-2):not(.btn-quiet, .border-dashed, .rounded-full),
+:root[data-world] [data-page="latihan"]::before,
+:root[data-world] [data-page="periksa"] .chip::before {
+  border-radius: 9px;
+  border-image: var(--ink-box) 12 / 7.5 stretch;
+}
+/* A rule along one side only is the same stroke: the other sides, with no border, draw nothing. */
+:root[data-world] .lembar-wrap:not([data-page="home"]) :is(.border-t-2, .border-b-2, .border-y-2, .divide-y-2 > *, .panel h3) {
+  border-image: var(--ink-box) 12 / 7.5 stretch;
+}
+/* Titles on paper are lettered by hand, in the same pen as the pinboard's notes. A screen has no pen. */
+:root[data-world] .lembar-wrap:not([data-page="home"], [data-page="simulasi"]) h1 {
+  font-family: var(--font-hand);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
 }
 
 /* The printout: a worksheet off the printer, with a letterhead, ruled writing lines and boxes to tick. */
 :root[data-world] [data-page="periksa"] {
   background: var(--grain) var(--card);
+}
+
+/* The map: the page is the map itself, unfolded off the pinboard, its creases where it folds in three. So the sheet
+   drawn inside it on a plain page is not needed. On a phone it lies on the printout, which has no pins. */
+:root[data-world] [data-page="peta"] {
+  --crease: color-mix(in srgb, var(--ink) 12%, transparent);
+  background:
+    linear-gradient(90deg, transparent calc(100% / 3 - 1px), var(--crease) calc(100% / 3), transparent calc(100% / 3 + 1px)),
+    linear-gradient(90deg, transparent calc(200% / 3 - 1px), var(--crease) calc(200% / 3), transparent calc(200% / 3 + 1px)),
+    linear-gradient(90deg, transparent calc(100% / 3), color-mix(in srgb, var(--ink) 3%, transparent) calc(100% / 3) calc(200% / 3), transparent 0),
+    var(--grain) var(--card);
+}
+:root[data-world] [data-page="peta"] .peta-map {
+  padding-inline: 0;
+  border: 0;
+  background: none;
+}
+@media (min-width: 768px) {
+  :root[data-world] [data-page="peta"] > .lembar {
+    padding-top: 3.25rem; /* clear of the pins */
+  }
+  :root[data-world] [data-page="peta"]::before {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    inset: 4px 6px auto;
+    height: 40px;
+    background:
+      radial-gradient(circle at 38% 36%, rgb(255 255 255 / 0.5) 0 3px, transparent 3.5px) 0 0 / 40px 40px no-repeat,
+      radial-gradient(circle, var(--danger) 0 15px, var(--line) 15.5px 18.5px, transparent 19px) 0 0 / 40px 40px no-repeat,
+      radial-gradient(circle at 38% 36%, rgb(255 255 255 / 0.5) 0 3px, transparent 3.5px) 100% 0 / 40px 40px no-repeat,
+      radial-gradient(circle, var(--danger) 0 15px, var(--line) 15.5px 18.5px, transparent 19px) 100% 0 / 40px 40px no-repeat;
+    pointer-events: none;
+  }
 }
 :root[data-world] [data-page="periksa"] .kop {
   display: flex;
@@ -903,7 +1133,7 @@ body {
   padding: 1rem 1.6rem 2.5rem;
 }
 :root[data-world] [data-page="simulasi"] h1 {
-  font-size: 2.4rem;
+  font-size: clamp(2rem, 13cqi, 2.4rem);
 }
 /* A screen has no pen: there the margin note is the app's own subtitle. */
 :root[data-world] [data-page="simulasi"] .hand {
@@ -1017,7 +1247,7 @@ body {
   margin: 2.4rem 12px 12px; /* below the suit in the corner, so nothing scrolls under it */
 }
 :root[data-world] [data-page="latihan"] .panel {
-  border-color: transparent;
+  border-style: none;
   background: none;
   padding-inline: 0;
   counter-reset: pilihan;
@@ -1036,11 +1266,37 @@ body {
   color: var(--muted);
 }
 
-/* The folder: the sheet inside it, with a margin line down the left. */
+/* The folder: the sheet inside it, with a margin line down the left. The words start right of it, on a phone too. */
 :root[data-world] [data-page="bertindak"] {
   background:
     linear-gradient(90deg, transparent 1.4rem, color-mix(in srgb, var(--danger) 40%, transparent) 1.4rem calc(1.4rem + 1.5px), transparent 0),
     var(--grain) var(--paper);
+}
+:root[data-world] [data-page="bertindak"] > .lembar {
+  padding-left: clamp(2.1rem, 4vw, 2.5rem);
+}
+
+/* The smallest phones: titles a size down, so one still fits in three lines, not four. Home has no container, so
+   it goes by the screen. */
+@container (max-width: 300px) {
+  .lembar h1 {
+    font-size: clamp(2rem, 13cqi, 2.6rem);
+  }
+}
+@media (max-width: 359px) {
+  .lembar-wrap[data-page="home"] h1 {
+    font-size: 2.15rem;
+  }
+}
+
+/* On a phone's page a framed box is a box too many: what it framed lies on the page itself, with all of its width.
+   Not on the tablet, whose app keeps its cards. */
+@container (max-width: 591px) {
+  :root[data-world] .lembar-wrap:not([data-page="simulasi"]) .panel {
+    border-style: none;
+    padding-inline: 0;
+    background: none;
+  }
 }
 
 /* The clipboard: the checklist is the sheet itself, under the board's own clip, its groups ruled off. */

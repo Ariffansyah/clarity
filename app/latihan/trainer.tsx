@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { analyze } from "@/lib/analyze";
 import { SCENARIOS, type Grade, type Scenario } from "@/lib/scenarios";
 import Marked from "../marked";
+import Stamp from "../stamp";
 
 const VERDICT: Record<Grade, { title: string; color: string }> = {
   tepat: { title: "Tepat", color: "var(--good)" },
@@ -147,14 +148,14 @@ export default function Trainer() {
 function Thread({ s, marked }: { s: Scenario; marked?: boolean }) {
   return (
     <div className="mt-5 rounded-2xl border-2 border-line bg-card">
-      <div className="flex items-center justify-between gap-3 border-b-2 border-line px-4 py-3">
+      <div className="flex items-center justify-between gap-3 border-b-2 border-line px-3 py-3 @min-[592px]:px-4">
         <div className="min-w-0">
-          <p className="truncate font-bold">{s.from}</p>
-          <p className="truncate text-sm text-muted">{s.sub}</p>
+          <p className="font-bold break-words">{s.from}</p>
+          <p className="text-sm text-muted">{s.sub}</p>
         </div>
         <span className="flex-none rounded-md border-2 border-line px-2 py-0.5 text-xs font-bold">{s.channel}</span>
       </div>
-      <div className="space-y-2.5 p-4">
+      <div className="space-y-2.5 p-3 @min-[592px]:p-4">
         {s.messages.map((m) => (
           <p key={m} className="bubble">
             {marked ? <Marked text={m} spans={analyze(m).spans} /> : m}
@@ -191,14 +192,11 @@ function Answer({
   return (
     <div>
       <p className="text-sm font-semibold text-muted">Kamu memilih: {choice.text}</p>
-      <h2
-        id="umpan-balik"
-        ref={heading}
-        tabIndex={-1}
-        className="mt-1 scroll-mt-16 text-3xl font-extrabold tracking-tight"
-        style={{ color: VERDICT[choice.grade].color }}
-      >
-        {VERDICT[choice.grade].title}
+      <h2 id="umpan-balik" ref={heading} tabIndex={-1} className="mt-2 scroll-mt-16">
+        {/* Keyed, so a quick next answer is stamped afresh. */}
+        <Stamp key={s.id} color={VERDICT[choice.grade].color}>
+          {VERDICT[choice.grade].title}
+        </Stamp>
       </h2>
       <p className="mt-3 text-lg leading-relaxed">{choice.feedback}</p>
       {choice.grade !== "tepat" && best && (

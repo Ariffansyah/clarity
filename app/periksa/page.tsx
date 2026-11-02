@@ -28,7 +28,7 @@ export default function Periksa() {
     <>
       <Checker aiReady={!!process.env.GROQ_API_KEY} />
 
-      <section aria-labelledby="kalimat" className="mt-20">
+      <section aria-labelledby="kalimat" className="mt-14 @min-[592px]:mt-20">
         <h2 id="kalimat" className="hand text-3xl">
           kalimat favorit penipu
         </h2>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { MAX_SIM_TURNS, PERSONAS, redact, type PersonaId, type SimLine, type SimReply, type SimReview } from "@/lib/ai";
+import Stamp from "../stamp";
 
 const RESULT = {
   aman: { title: "Kamu aman", color: "var(--good)" },
@@ -239,8 +240,8 @@ export default function Sim({ ready }: { ready: boolean }) {
         {review && p && (
           <div ref={reveal} className="panel enter mt-6 p-5 @min-[592px]:p-7">
             <p className="hand text-xl">hasil simulasi</p>
-            <h3 className="mt-1 text-3xl font-extrabold tracking-tight" style={{ color: RESULT[review.hasil].color }}>
-              {RESULT[review.hasil].title}
+            <h3 className="mt-2">
+              <Stamp color={RESULT[review.hasil].color}>{RESULT[review.hasil].title}</Stamp>
             </h3>
             <p className="mt-3 text-lg leading-relaxed">{review.ringkasan}</p>
             {[
