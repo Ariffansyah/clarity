@@ -606,13 +606,20 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       ];
       // Beside the paper, not on it: the page would cover it. Opening, it sweeps once over the sheet, then off to the side.
       const glass = group(g);
-      const lens = part(glass, new THREE.TorusGeometry(0.045, 0.009, 8, 24), c.ink, 0, 0.009, 0);
-      lens.rotation.x = -Math.PI / 2;
-      const handle = part(glass, cyl(0.008, 0.075), c.ink, 0.045, 0.008, 0.06);
-      handle.rotation.set(Math.PI / 2, 0, 0.65);
+      part(glass, cyl(0.056, 0.004), tone(c.card, c.good, 0.25), 0, 0.009, 0);
+      const rim = part(glass, new THREE.TorusGeometry(0.058, 0.009, 8, 32), c.ink, 0, 0.011, 0);
+      rim.rotation.x = -Math.PI / 2;
+      // A curved glint, so the disc reads as glass. Unlit and left out of the ink pass, or its outline would swallow it.
+      const glint = new THREE.Mesh(new THREE.TorusGeometry(0.038, 0.004, 6, 12, 1.1), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      glint.rotation.set(-Math.PI / 2, 0, 1.9);
+      glint.position.y = 0.012;
+      glass.add(glint);
+      // Neck and grip run straight out from the rim's centre, towards the lower right.
+      part(glass, cyl(0.006, 0.02), c.ink, 0.0436, 0.009, 0.0573).rotation.set(Math.PI / 2, 0, -0.65);
+      part(glass, cyl(0.012, 0.08), c.hl, 0.0726, 0.012, 0.0955).rotation.set(Math.PI / 2, 0, -0.65);
       const open = (o: number) => {
         const over = Math.sin(Math.PI * o);
-        glass.position.set(0.19 - 0.26 * over + 0.1 * o, 0.03 * over, 0.08 - 0.12 * over + 0.04 * o);
+        glass.position.set(0.215 - 0.285 * over + 0.1 * o, 0.03 * over, 0.04 - 0.08 * over + 0.04 * o);
         glass.rotation.y = 0.5 * o;
         for (const m of marks) m.visible = o < 0.5;
       };
