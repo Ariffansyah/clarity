@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { easeOut, pageRect, planeFromRect, type Route } from "@/lib/desk";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { INK, inkPass } from "./world-ink";
 import { buildPhone } from "./world-phone";
 
 const FLY = 1; // seconds for the camera to move between your chair and a page on the desk, the thing opening on the way
@@ -88,6 +89,31 @@ function drawView(c: Palette, cv = Object.assign(document.createElement("canvas"
       g.rect(x, y - 2 * k, 31 * k, 14 * k);
       g.fill();
     }
+    // A little flock crossing, wings beating.
+    g.strokeStyle = css(c.ink);
+    g.lineWidth = 1.5;
+    g.globalAlpha = 0.7;
+    for (const [y, start] of [[66, 0], [57, 22], [73, 38]] as const) {
+      const x = ((start + t * 14) % 520) - 100;
+      const flap = 3 * Math.sin(t * 7 + start);
+      g.beginPath();
+      g.moveTo(x - 5, y - flap);
+      g.quadraticCurveTo(x - 2, y - 3, x, y);
+      g.quadraticCurveTo(x + 2, y - 3, x + 5, y - flap);
+      g.stroke();
+    }
+  }
+  // Now and then at night, a shooting star.
+  const shoot = ((t % 11) - 5) / 0.8;
+  if (night && shoot >= 0 && shoot < 1) {
+    const [x, y] = [70 + 130 * shoot, 18 + 45 * shoot];
+    g.globalAlpha = 1 - shoot;
+    g.strokeStyle = css(c.ink);
+    g.lineWidth = 1.5;
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x - 26, y - 9);
+    g.stroke();
   }
   g.globalAlpha = 1;
   const rnd = seeded(11);
@@ -128,7 +154,7 @@ function palette() {
 
 export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement | null, first: Route, onOpen: (href: string) => void) {
   const c = palette();
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  const renderer = new THREE.WebGLRenderer({ canvas }); // the ink pass smooths its own edges
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   const night = c.paper.getHSL({ h: 0, s: 0, l: 0 }).l < 0.5;
   const rc = Object.fromEntries(Object.entries(night ? ROOM.night : ROOM.day).map(([k, v]) => [k, new THREE.Color(v)])) as Record<keyof typeof ROOM.day, THREE.Color>;
@@ -136,11 +162,22 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
 
   const scene = new THREE.Scene();
   scene.background = c.paper;
-  // Three divides surface colour by pi, so about pi of light in total lands on the app's own palette.
-  scene.add(new THREE.AmbientLight(0xffffff, 2.8));
-  const sun = new THREE.DirectionalLight(0xffffff, 0.5);
+  // Three divides surface colour by pi, so about pi of light in total lands on the app's own palette, on every side
+  // the sun reaches. Two flat tones, as a cel is painted: the sides turned away from it a shade darker.
+  scene.add(new THREE.AmbientLight(0xffffff, 2.4));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.9);
   sun.position.set(1, 3, 2);
   scene.add(sun);
+  const bands = new THREE.DataTexture(new Uint8Array([0, 255]), 2, 1, THREE.RedFormat);
+  bands.needsUpdate = true;
+  const ink = inkPass(renderer, c.line);
+  // Every solid thing gets the two tones and the ink's bold outline.
+  const inked = (root: THREE.Object3D) =>
+    root.traverse((o) => {
+      if (!(o instanceof THREE.Mesh && o.material instanceof THREE.MeshToonMaterial)) return;
+      o.material.gradientMap = bands;
+      o.layers.enable(INK);
+    });
 
   const edges = new THREE.LineBasicMaterial({ color: c.line });
   const part = (parent: THREE.Object3D, geo: THREE.BufferGeometry, color: THREE.Color, x: number, y: number, z: number) => {
@@ -192,17 +229,12 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     return f;
   };
 
-  // Round things get a cartoon outline: a slightly bigger copy turned inside out, since a sphere has no edges to draw.
-  const hull = new THREE.MeshBasicMaterial({ color: c.line, side: THREE.BackSide });
+  // Round things have no edges to draw; the ink finds their outline.
   const blob = (parent: THREE.Object3D, color: THREE.Color, [x, y, z]: number[], [sx, sy, sz]: number[], tilt = 0, turn = 0) => {
-    const ball = new THREE.SphereGeometry(1, 16, 12);
-    const m = new THREE.Mesh(ball, new THREE.MeshToonMaterial({ color }));
+    const m = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshToonMaterial({ color }));
     m.position.set(x, y, z);
     m.scale.set(sx, sy, sz);
     m.rotation.set(0, turn, tilt);
-    const outline = new THREE.Mesh(ball, hull);
-    outline.scale.set(1.12, 1.06, 1.12);
-    m.add(outline);
     parent.add(m);
     return m;
   };
@@ -250,7 +282,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   part(room, box(0.66, 0.022, 0.07), rc.trim, 0.55, 0.19, -0.995);
 
   // A pinboard leaning on the wall at the back of the desk: notes, red pins and the red string between them,
-  // the way you would piece a scam together.
+  // the way you would piece a scam together. Each note is a tip, scrawled in the app's red-pen hand.
   const board = group(room);
   lowWall.push(board);
   board.position.set(-0.62, 0, -0.97);
@@ -258,16 +290,31 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   part(board, box(0.6, 0.32, 0.025), rc.trim, 0, 0.16, 0);
   part(board, box(0.56, 0.28, 0.01), rc.cork, 0, 0.16, 0.014);
   const pins: THREE.Vector3[] = [];
-  for (const [x, y, w, color, spin] of [
-    [-0.19, 0.22, 0.1, c.card, 0.06],
-    [-0.04, 0.12, 0.09, c.hl, -0.08],
-    [0.11, 0.21, 0.1, tone(c.card, c.good, 0.35), 0.05],
-    [0.2, 0.09, 0.08, tone(c.card, c.danger, 0.3), -0.1],
+  const hand = getComputedStyle(document.documentElement).getPropertyValue("--font-kalam").trim() || "cursive";
+  for (const [x, y, w, color, spin, tip] of [
+    [-0.19, 0.22, 0.1, c.card, 0.06, "OTP itu\nrahasia!"],
+    [-0.04, 0.12, 0.09, c.hl, -0.08, "Jangan\nburu-buru"],
+    [0.11, 0.21, 0.1, tone(c.card, c.good, 0.35), 0.05, "Cek dulu\nlink-nya"],
+    [0.2, 0.09, 0.08, tone(c.card, c.danger, 0.3), -0.1, "Bank tak\nminta PIN"],
   ] as const) {
     const note = part(board, box(w, w * 0.9, 0.003), color, x, y, 0.021);
     note.rotation.z = spin;
-    part(note, box(w * 0.6, 0.006, 0.002), c.line, 0, 0.004, 0.002);
-    part(note, box(w * 0.45, 0.006, 0.002), c.line, -w * 0.07, -0.014, 0.002);
+    const cv = Object.assign(document.createElement("canvas"), { width: 128, height: 116 });
+    const words = new THREE.CanvasTexture(cv);
+    words.colorSpace = THREE.SRGBColorSpace;
+    const written = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.92, w * 0.83), new THREE.MeshBasicMaterial({ map: words, transparent: true }));
+    written.position.set(0, -w * 0.06, 0.002);
+    note.add(written);
+    // Once the hand has loaded; if it never does, the fallback still writes the tip.
+    const write = () => {
+      const g = cv.getContext("2d")!;
+      g.fillStyle = color === c.hl ? "#17181c" : `#${c.ink.getHexString()}`; // yellow stays yellow in the dark
+      g.font = `700 27px ${hand}`;
+      g.textAlign = "center";
+      tip.split("\n").forEach((line, i) => g.fillText(line, 64, 52 + i * 34));
+      words.needsUpdate = dirty = true;
+    };
+    document.fonts.load(`700 27px ${hand}`).then(write, write);
     const pin = blob(board, c.danger, [x, y + w * 0.38, 0.03], [0.009, 0.009, 0.009]);
     pins.push(pin.position.clone());
   }
@@ -299,6 +346,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
           line.raycast = () => {};
           o.add(line);
         });
+        inked(m);
         m.rotation.y = turn;
         const size = new THREE.Box3().setFromObject(m).getSize(new THREE.Vector3());
         const k = height / size.y;
@@ -471,14 +519,54 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     return tex;
   })();
   const earth = new THREE.Mesh(new THREE.SphereGeometry(0.075, 28, 18), new THREE.MeshToonMaterial({ map }));
-  const rim = new THREE.Mesh(earth.geometry, hull);
-  rim.scale.setScalar(1.06);
-  earth.add(rim);
   axis.add(earth);
+
+  // A celengan ayam in the window's light: the clay hen a family drops its coins into, the savings all of this is
+  // here to protect. Painted with flowers, a coin slot in her back, looking out at you.
+  const hen = group(ambient);
+  hen.position.set(0.74, 0, -0.6);
+  hen.rotation.y = -0.6;
+  const clay = tone(rc.accent, c.danger, 0.3);
+  blob(hen, clay, [0, 0.05, 0], [0.055, 0.045, 0.042]);
+  blob(hen, clay, [0.045, 0.098, 0], [0.026, 0.03, 0.024]);
+  blob(hen, clay, [-0.052, 0.082, 0], [0.018, 0.036, 0.032], 0.5);
+  blob(hen, c.danger, [0.046, 0.13, 0], [0.016, 0.012, 0.007]);
+  blob(hen, c.hl, [0.072, 0.096, 0], [0.012, 0.006, 0.007]);
+  for (const side of [1, -1]) blob(hen, c.line, [0.06, 0.106, 0.017 * side], [0.004, 0.004, 0.004]);
+  blob(hen, c.hl, [0.004, 0.056, 0.039], [0.013, 0.013, 0.004]);
+  blob(hen, tone(c.good, c.card, 0.2), [-0.024, 0.04, 0.034], [0.009, 0.009, 0.004]);
+  blob(hen, tone(c.good, c.card, 0.2), [0.026, 0.036, 0.035], [0.008, 0.008, 0.004]);
+  part(hen, box(0.03, 0.006, 0.006), c.line, -0.004, 0.094, 0);
+
+  // Steam curling up off the mug the way a cartoon draws it: three wavy strokes, each rising and fading in its turn.
+  const wisp = (() => {
+    const cv = Object.assign(document.createElement("canvas"), { width: 32, height: 96 });
+    const g = cv.getContext("2d")!;
+    g.strokeStyle = "#fff";
+    g.lineWidth = 6;
+    g.lineCap = "round";
+    g.beginPath();
+    for (let y = 6; y <= 90; y += 2) g.lineTo(16 + 9 * Math.sin(y / 14), y);
+    g.stroke();
+    return new THREE.CanvasTexture(cv);
+  })();
+  const steam = [0, 1, 2].map(() => {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: wisp, color: c.line, transparent: true, depthWrite: false }));
+    s.scale.set(0.028, 0.08, 1);
+    ambient.add(s);
+    return s;
+  });
+  const rise = (t: number) =>
+    steam.forEach((s, i) => {
+      const k = (t * 0.35 + i / 3) % 1;
+      s.position.set(1.05 + (i - 1) * 0.025, 0.16 + k * 0.07, -0.5);
+      s.material.opacity = 0.85 * Math.sin(Math.PI * k);
+    });
+  rise(0);
 
   let skyShown = -1;
   // One beat of the room's life, at time t seconds: dust drifts, lights twinkle, flames flicker, the globe turns,
-  // the sky moves on (redrawn ten times a second: plenty for clouds).
+  // the mug steams, the sky moves on (redrawn ten times a second: plenty for clouds).
   const stir = (t: number) => {
     const at = dust.attributes.position as THREE.BufferAttribute;
     for (let i = 0; i < 60; i++) {
@@ -489,6 +577,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     flames.forEach((f, i) => (f.scale.y = 0.016 * (1 + 0.15 * Math.sin(t * 13 + i * 2) + 0.08 * Math.sin(t * 7.3 + i))));
     glows.forEach((g, i) => (g.material.opacity = 0.5 + 0.12 * Math.sin(t * 11 + i * 3)));
     earth.rotation.y = t * 0.25;
+    rise(t);
     if (t - skyShown >= 0.1) {
       skyShown = t;
       drawView(c, viewCanvas, t);
@@ -721,6 +810,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     if (!w || !h) return;
     narrow = w < 768;
     renderer.setSize(w, h, false);
+    ink.setSize();
     camera.aspect = w / h;
     camera.fov = narrow ? 50 : 45;
     camera.updateProjectionMatrix();
@@ -798,7 +888,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     }
     camera.updateMatrixWorld(true);
     scene.updateMatrixWorld();
-    renderer.render(scene, camera);
+    ink.render(scene, camera);
 
     const open = thingFor(route);
     const el = sheet();
@@ -883,6 +973,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
   addEventListener("keydown", onKey);
   canvas.addEventListener("click", onClick);
 
+  inked(scene);
   place();
   let last = performance.now();
   let raf = requestAnimationFrame(function tick(now) {
@@ -949,6 +1040,7 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
           for (const m of [o.material].flat()) m.dispose();
         }
       });
+      ink.dispose();
       renderer.dispose();
     },
   };
