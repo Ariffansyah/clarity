@@ -34,7 +34,7 @@ export function Checklist() {
           <h3 className="font-extrabold">{g.group}</h3>
           <ul className="mt-3 space-y-5">
             {g.items.map((l) => (
-              <li key={l.id} className={done.has(l.id) ? "is-done" : undefined}>
+              <li key={l.id} className={done.has(l.id) ? "check-row is-done" : "check-row"}>
                 <div className="flex gap-3">
                   <input id={l.id} type="checkbox" className="check" checked={done.has(l.id)} onChange={() => toggle(l.id)} />
                   <div>

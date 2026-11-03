@@ -88,7 +88,7 @@ export function Guide() {
                   </h3>
                   <ul className="mt-3 space-y-4">
                     {steps.map(({ s, key }) => (
-                      <li key={key} className={done.has(key) ? "is-done" : undefined}>
+                      <li key={key} className={done.has(key) ? "check-row is-done" : "check-row"}>
                         <div className="flex gap-3">
                           <input id={key} type="checkbox" className="check" checked={done.has(key)} onChange={() => toggle(key)} />
                           <div>

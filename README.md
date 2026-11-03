@@ -1,7 +1,25 @@
 # Clarity
 
-Aplikasi web untuk studi kasus **The Trust Trap: Navigating Digital Deception** (MIT-Week 2026). Membantu anak muda
-Indonesia mengenali tipuan digital, berlatih mengambil keputusan, dan tahu langkah yang harus diambil kalau sudah terlanjur.
+Aplikasi web untuk studi kasus **The Trust Trap: Navigating Digital Deception** (Web Development MIT-Week 2026, tema
+*Guardians of the Digital Space*). Membantu anak muda Indonesia mengenali tipuan digital, berlatih mengambil keputusan, dan
+tahu langkah yang harus diambil kalau sudah terlanjur, lalu meneruskan peringatannya ke teman dan keluarga.
+
+- **Live:** _(isi tautan deployment)_
+- **Video demo:** _(isi tautan video)_
+
+## Mencoba dalam satu menit
+
+1. Buka tautan live. Halaman depan adalah meja berisi berkas; klik berkasnya atau labelnya untuk membukanya.
+2. Buka **Cek Pesan**, lalu klik salah satu contoh pesan fiktif (langsung diperiksa), atau tempel pesanmu sendiri dan tekan
+   **Periksa pesan**.
+3. Hasilnya: bagian yang mencurigakan ditandai stabilo, tiap tanda dijelaskan alasannya, tautannya dicek, dan ada langkah
+   aman yang bisa langsung dilakukan. Hasil bisa dikirim ke keluarga lewat WhatsApp.
+4. Kalau mau, tekan **Kirim ke AI** untuk pendapat kedua. Teks yang akan dikirim bisa dilihat dulu, sudah disamarkan.
+5. Lanjut ke **Latihan** (pilih tindakan untuk 11 situasi), **Simulasi** (ngobrol dengan penipu fiktif, lalu dinilai), atau
+   **Sudah Terlanjur?** (pilih kejadiannya, ikuti daftar periksanya).
+
+Semua alamat bisa dibuka langsung (`/periksa`, `/latihan`, dan seterusnya) dan tampil sebagai halaman penuh. Kalau
+browser tidak mendukung WebGL, meja 3D tidak tampil dan berkasnya menjadi daftar tombol biasa.
 
 ## Fitur
 
@@ -16,18 +34,71 @@ Indonesia mengenali tipuan digital, berlatih mengambil keputusan, dan tahu langk
 | `/simulasi` | Learn (AI) | Ngobrol dengan penipu fiktif yang diperankan AI (7 persona), maksimal 8 balasan, lalu dinilai: aman, hampir kena, atau kena, beserta alasannya. |
 | `/periksa` Tanya AI | Recognize (AI) | Setelah pemeriksaan berbasis aturan, pengguna bisa meminta pendapat kedua dari AI. Kutipan AI yang tidak ada di pesan dibuang, jadi setiap sorotan menunjuk teks asli. |
 
+## Kenapa ini menjawab studi kasus
+
+Studi kasus meminta pengguna menjadi *guardian*: mengenali tipuan, belajar mengambil keputusan lebih aman, lalu bertindak
+untuk diri sendiri dan orang lain. Clarity mengikuti urutan itu.
+
+- **Saat ragu (Recognize).** Cek Pesan menjawab pertanyaan "ini tipuan bukan?" pada saat pesannya masih di depan mata,
+  dengan alasan yang bisa dipahami, bukan sekadar skor.
+- **Sebelum kejadian (Learn).** Latihan dan Simulasi melatih keputusan di situasi yang mirip aslinya, termasuk dua situasi
+  yang wajar, supaya pengguna tidak sekadar curiga pada semua pesan.
+- **Setelah kejadian (Act).** Sudah Terlanjur? mengurutkan langkah dari yang paling mendesak dan menunjuk saluran lapor resmi.
+- **Pendekatan tambahan: Understand.** Penipu terus mengganti cerita, tapi bagiannya sama (umpan, kedok, desakan, isolasi,
+  permintaan). Peta Tipuan mengajarkan bagian-bagian itu, jadi pengguna bisa mengenali modus yang belum pernah ia lihat,
+  bukan hanya yang ada di daftar.
+- **Pendekatan tambahan: Prevent.** Amankan Akun menutup celah sebelum penipu datang, karena banyak tipuan (APK, OTP,
+  suara tiruan) gagal kalau pengaturan HP dan rekening sudah dikunci.
+- **Melindungi orang lain.** Hasil Cek Pesan bisa dikirim ke keluarga, penyusun pesan peringatan menyiapkan kabar untuk
+  teman, dan kata sandi keluarga melindungi orang tua dari telepon "anakmu kecelakaan" dengan suara tiruan AI.
+
 ## Cara kerja dan batasannya
 
 - Penilaian memakai aturan (regex dan pengecekan alamat) di `lib/analyze.ts`. Setiap aturan punya alasan yang ditampilkan ke pengguna.
 - Hasil **bukan bukti**. "Belum ada pola yang cocok" tidak berarti aman, dan aplikasi menyatakannya di layar.
 - Pemeriksaan berbasis aturan berjalan di browser dan tidak mengirim apa pun.
 - Fitur AI (Tanya AI dan Simulasi) mengirim teks ke [Groq](https://groq.com) **hanya setelah pengguna menekan tombol**, dan ini dijelaskan di layar. Nomor, angka panjang, dan email disamarkan di browser lalu disamarkan ulang di server (`lib/ai.ts`). Clarity tidak menyimpan teks atau percakapan.
+- Satu-satunya yang disimpan adalah pilihan tema terang atau gelap, di `localStorage` browser pengguna.
 - Tanpa kunci API, fitur AI tampil nonaktif dan fitur lain tetap jalan.
 - Semua contoh dan skenario fiktif. Tidak ada tautan berbahaya yang bisa diklik.
 
+## Teknologi dan sumber pihak ketiga
+
+| Sumber | Dipakai untuk | Lisensi |
+| --- | --- | --- |
+| [Next.js 16](https://nextjs.org), [React 19](https://react.dev) | Kerangka aplikasi dan API route | MIT |
+| [Tailwind CSS 4](https://tailwindcss.com) | Gaya tampilan | MIT |
+| [three.js](https://threejs.org) | Meja 3D di halaman depan | MIT |
+| [Furniture Kit oleh Kenney](https://kenney.nl/assets/furniture-kit) | Model meja, rak, lampu, tanaman, radio (`public/models/kenney`) | CC0 |
+| [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans), [Kalam](https://fonts.google.com/specimen/Kalam) | Huruf utama dan tulisan tangan | SIL OFL |
+| [Groq API](https://groq.com), model `openai/gpt-oss-120b` | Pendapat kedua AI dan pemeran penipu di Simulasi | Layanan pihak ketiga |
+
+## Struktur proyek
+
+```
+app/
+  page.tsx            halaman depan (meja)
+  periksa/ latihan/ simulasi/ amankan/ bertindak/ peta/   satu folder per halaman
+  api/periksa/        POST: pendapat kedua AI untuk Cek Pesan
+  api/simulasi/       POST: balasan penipu dan penilaian akhir Simulasi
+  checker.tsx         antarmuka Cek Pesan
+  world*.tsx, world-*.ts   meja 3D (hanya hiasan; tanpa WebGL halaman tetap jalan)
+lib/
+  analyze.ts          aturan pendeteksi dan pengecek tautan
+  scenarios.ts        11 situasi Latihan
+  situations.ts       daftar periksa Sudah Terlanjur? dan saluran lapor
+  peta.ts, kunci.ts   isi Peta Tipuan dan Amankan Akun
+  ai.ts               penyamaran data dan persona Simulasi (dipakai browser dan server)
+  groq.ts             pemanggil Groq dan pembatas permintaan (hanya server)
+  *.test.ts           uji aturan pendeteksi, peta, dan tata letak meja
+```
+
+Konten (aturan, skenario, langkah) dipisah dari tampilan di `lib/`, jadi menambah modus baru cukup menambah satu entri.
+
 ## Menjalankan
 
-Fitur AI butuh kunci dari [console.groq.com](https://console.groq.com). Salin contohnya ke `.env.local` (tidak ikut di-commit), lalu isi `GROQ_API_KEY`:
+Butuh Node.js 22.18+ (supaya `pnpm test` bisa langsung menjalankan file `.ts`) dan pnpm. Fitur AI butuh kunci dari [console.groq.com](https://console.groq.com). Salin contohnya ke
+`.env.local` (tidak ikut di-commit), lalu isi `GROQ_API_KEY`:
 
 ```bash
 cp .env.example .env.local
@@ -39,3 +110,10 @@ pnpm dev     # http://localhost:3000
 pnpm test    # uji aturan pendeteksi
 pnpm build
 ```
+
+| Variabel | Wajib | Isi |
+| --- | --- | --- |
+| `GROQ_API_KEY` | Tidak | Menyalakan Tanya AI dan Simulasi. Kosong berarti keduanya nonaktif. |
+| `GROQ_MODEL` | Tidak | Model Groq. Bawaannya `openai/gpt-oss-120b`. |
+
+Untuk deploy (misalnya Vercel), impor repositori ini lalu isi `GROQ_API_KEY` di pengaturan environment variable.

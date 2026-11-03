@@ -870,8 +870,10 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     to.quat.setFromRotationMatrix(mtx.makeBasis(r, u, n));
     focus.setFromMatrixPosition(f);
     open.sheet.scale[open.axis] = now;
-    // A phone's screen has little room to lean into, and turning a narrow page sideways slants every line.
-    orbit(to.pos, to.quat, narrow ? 0 : open.lean[1], open.lean[0] * (narrow ? 0.35 : 1), r);
+    // A phone's or a standing tablet's screen has little room to lean into: turned sideways, the page's near edge
+    // runs off the screen and every line slants.
+    const upright = narrow || canvas.clientHeight > canvas.clientWidth;
+    orbit(to.pos, to.quat, upright ? 0 : open.lean[1], open.lean[0] * (narrow ? 0.35 : 1), r);
   };
 
   const place = () => {
@@ -971,12 +973,15 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
     // Pin the home page's HTML labels to the things they name.
     if (route === "home") {
       const { clientWidth: w, clientHeight: h } = canvas;
-      document.querySelectorAll<HTMLElement>("[data-anchor]").forEach((el) => {
+      const labels = [...document.querySelectorAll<HTMLElement>("[data-anchor]")];
+      const halves = labels.map((el) => el.offsetWidth / 2 + 8); // all read before any write: one layout, not five
+      labels.forEach((el, i) => {
         const a = ANCHORS[el.dataset.anchor!];
         if (!a) return;
         const spot = narrow ? a.narrow : a.wide;
         v.set(across(spot), 0, spot[1]).project(camera);
-        el.style.setProperty("--x", `${((v.x + 1) / 2) * w}px`);
+        // Kept whole on screen, however near the edge its thing lies.
+        el.style.setProperty("--x", `${Math.min(w - halves[i], Math.max(halves[i], ((v.x + 1) / 2) * w))}px`);
         el.style.setProperty("--y", `${((1 - v.y) / 2) * h}px`);
       });
     }
@@ -1063,8 +1068,9 @@ export function startWorld(canvas: HTMLCanvasElement, sheet: () => HTMLElement |
       lookY += (ty - lookY) * k;
       dirty = true;
     }
-    // The phone and the room's small motions keep the desk redrawing, so cap them at 30 fps.
-    if (!reduced.matches) {
+    // The phone and the room's small motions keep the desk redrawing, so cap them at 30 fps. On a phone the page
+    // being read covers the desk, so it holds still there: the GPU stays free for scrolling.
+    if (!reduced.matches && (route === "home" || !narrow)) {
       idle += dt;
       if (idle - idleShown >= 1 / 30) {
         idleShown = idle;

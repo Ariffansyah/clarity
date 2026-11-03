@@ -432,6 +432,19 @@ body {
   background: linear-gradient(currentColor, currentColor) no-repeat 0 55% / 0% 2px;
   transition: background-size 0.35s ease-out, color 0.2s;
 }
+/* A whole checklist row ticks its box, so a thumb need not find the box itself. Links in the row stay on top. */
+.check-row {
+  position: relative;
+}
+.check-row .done-text::after {
+  content: "";
+  position: absolute;
+  inset: -0.5rem;
+}
+.check-row a {
+  position: relative;
+  z-index: 1;
+}
 .is-done .done-text {
   background-size: 100% 2px;
   color: var(--muted);
@@ -590,11 +603,9 @@ body {
     padding-right: 3rem;
   }
 }
-/* Phones: the window on the wall can stand behind the intro's lines, so its words keep a margin of paper round them. */
-@media (max-width: 767px) {
-  :root[data-world] .lembar-wrap[data-page="home"] h1 + p {
-    text-shadow: 0 0 2px var(--paper), 0 0 5px var(--paper), 0 0 9px var(--paper);
-  }
+/* The window and the bunting on the wall can stand behind the intro's lines, so its words keep a margin of paper round them. */
+:root[data-world] .lembar-wrap[data-page="home"] h1 + p {
+  text-shadow: 0 0 2px var(--paper), 0 0 5px var(--paper), 0 0 9px var(--paper);
 }
 /* What a thing on the desk opens, beside the pointer, while you read another page. */
 .meja-tip {
