@@ -4,8 +4,21 @@ Aplikasi web untuk studi kasus **The Trust Trap: Navigating Digital Deception** 
 *Guardians of the Digital Space*). Membantu anak muda Indonesia mengenali tipuan digital, berlatih mengambil keputusan, dan
 tahu langkah yang harus diambil kalau sudah terlanjur, lalu meneruskan peringatannya ke teman dan keluarga.
 
-- **Live:** _(isi tautan deployment)_
-- **Video demo:** _(isi tautan video)_
+![Halaman depan Clarity: meja 3D berisi berkas, tiap berkas membuka satu fitur](docs/screenshots/meja.jpg)
+
+| | |
+| --- | --- |
+| **Live deployment** | _(isi tautan deployment)_ |
+| **Video demo** (maks. 5 menit) | _(isi tautan video)_ |
+| **Repositori** | [github.com/Ariffansyah/clarity](https://github.com/Ariffansyah/clarity) |
+| **Dokumentasi teknis** | [docs/TEKNIS.md](docs/TEKNIS.md) |
+
+**Tim:** _(isi nama tim)_
+
+| Nama | Peran |
+| --- | --- |
+| _Mohammad Ariffansyah_ | Ketua tim |
+| _Nailah Salsabila Ramadhani Kusnadi_ | _Anggota_ |
 
 ## Mencoba dalam satu menit
 
@@ -20,6 +33,19 @@ tahu langkah yang harus diambil kalau sudah terlanjur, lalu meneruskan peringata
 
 Semua alamat bisa dibuka langsung (`/periksa`, `/latihan`, dan seterusnya) dan tampil sebagai halaman penuh. Kalau
 browser tidak mendukung WebGL, meja 3D tidak tampil dan berkasnya menjadi daftar tombol biasa.
+
+## Tampilan
+
+| | |
+| --- | --- |
+| ![Hasil Cek Pesan: label "Sangat mencurigakan", pesan ditandai stabilo, dan alasan tiap tanda](docs/screenshots/periksa.jpg) | ![Peta Tipuan: lima bagian tipuan tersemat di papan pin](docs/screenshots/peta.jpg) |
+| **Cek Pesan.** Bagian yang mencurigakan ditandai, tiap tanda dijelaskan. | **Peta Tipuan.** Umpan, kedok, desakan, isolasi, permintaan. |
+| ![Latihan: kartu berbalik setelah memilih, menunjukkan umpan balik "Berbahaya"](docs/screenshots/latihan.jpg) | ![Simulasi: daftar persona penipu fiktif di layar tablet](docs/screenshots/simulasi.jpg) |
+| **Latihan.** Kartu berbalik dan menjelaskan pilihanmu. | **Simulasi.** Pilih lawan bicara, ngobrol, lalu dinilai. |
+| ![Amankan Akun: papan klip berisi pengaturan yang perlu dinyalakan](docs/screenshots/amankan.jpg) | ![Sudah Terlanjur?: pilihan kejadian di dalam map kuning](docs/screenshots/bertindak.jpg) |
+| **Amankan Akun.** Pengaturan yang menutup celah, dicentang satu per satu. | **Sudah Terlanjur?** Pilih kejadiannya, ikuti langkahnya. |
+| ![Halaman depan dalam tema gelap](docs/screenshots/meja-gelap.jpg) | <img src="docs/screenshots/hp-meja.jpg" alt="Halaman depan di HP" width="49%"> <img src="docs/screenshots/hp-periksa.jpg" alt="Hasil Cek Pesan di HP" width="49%"> |
+| **Tema gelap**, mengikuti pengaturan sistem. | **Di HP**, meja dan hasil pemeriksaan menyesuaikan layar. |
 
 ## Fitur
 
@@ -52,6 +78,18 @@ untuk diri sendiri dan orang lain. Clarity mengikuti urutan itu.
 - **Melindungi orang lain.** Hasil Cek Pesan bisa dikirim ke keluarga, penyusun pesan peringatan menyiapkan kabar untuk
   teman, dan kata sandi keluarga melindungi orang tua dari telepon "anakmu kecelakaan" dengan suara tiruan AI.
 
+## Panduan penilaian
+
+Tempat melihat tiap aspek di Juknis:
+
+| Aspek | Yang bisa dicek |
+| --- | --- |
+| Fungsionalitas | Tujuh halaman di tabel [Fitur](#fitur), semua bisa dibuka langsung lewat alamatnya. Tanpa kunci AI atau tanpa WebGL, fitur lain tetap jalan. |
+| Kesesuaian studi kasus | [Kenapa ini menjawab studi kasus](#kenapa-ini-menjawab-studi-kasus): Recognize, Learn, Act, ditambah Understand dan Prevent. |
+| UI/UX | Lihat [Tampilan](#tampilan). Bisa dipakai dari HP sampai desktop, tema terang dan gelap mengikuti sistem, animasi berkurang kalau `prefers-reduced-motion` aktif, dan setiap hasil diberi alasan, bukan sekadar skor. |
+| Kualitas kode | Konten dipisah dari tampilan di `lib/`, 16 uji unit (`pnpm test`), tanpa dependensi selain Next.js, React, dan three.js. Struktur dan cara menambah konten ada di [dokumentasi teknis](docs/TEKNIS.md). |
+| Dokumentasi | README ini dan [docs/TEKNIS.md](docs/TEKNIS.md): arsitektur, cara penilaian pesan, kontrak API, keamanan, pengujian, dan keputusan desain. |
+
 ## Cara kerja dan batasannya
 
 - Penilaian memakai aturan (regex dan pengecekan alamat) di `lib/analyze.ts`. Setiap aturan punya alasan yang ditampilkan ke pengguna.
@@ -73,27 +111,10 @@ untuk diri sendiri dan orang lain. Clarity mengikuti urutan itu.
 | [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans), [Kalam](https://fonts.google.com/specimen/Kalam) | Huruf utama dan tulisan tangan | SIL OFL |
 | [Groq API](https://groq.com), model `openai/gpt-oss-120b` | Pendapat kedua AI dan pemeran penipu di Simulasi | Layanan pihak ketiga |
 
-## Struktur proyek
+## Dokumentasi teknis
 
-```
-app/
-  page.tsx            halaman depan (meja)
-  periksa/ latihan/ simulasi/ amankan/ bertindak/ peta/   satu folder per halaman
-  api/periksa/        POST: pendapat kedua AI untuk Cek Pesan
-  api/simulasi/       POST: balasan penipu dan penilaian akhir Simulasi
-  checker.tsx         antarmuka Cek Pesan
-  world*.tsx, world-*.ts   meja 3D (hanya hiasan; tanpa WebGL halaman tetap jalan)
-lib/
-  analyze.ts          aturan pendeteksi dan pengecek tautan
-  scenarios.ts        11 situasi Latihan
-  situations.ts       daftar periksa Sudah Terlanjur? dan saluran lapor
-  peta.ts, kunci.ts   isi Peta Tipuan dan Amankan Akun
-  ai.ts               penyamaran data dan persona Simulasi (dipakai browser dan server)
-  groq.ts             pemanggil Groq dan pembatas permintaan (hanya server)
-  *.test.ts           uji aturan pendeteksi, peta, dan tata letak meja
-```
-
-Konten (aturan, skenario, langkah) dipisah dari tampilan di `lib/`, jadi menambah modus baru cukup menambah satu entri.
+Arsitektur, struktur folder, cara Cek Pesan menghitung skor, kontrak API, langkah keamanan, cara menambah aturan atau
+skenario, dan pengujian ada di [docs/TEKNIS.md](docs/TEKNIS.md).
 
 ## Menjalankan
 
@@ -107,8 +128,9 @@ cp .env.example .env.local
 ```bash
 pnpm install
 pnpm dev     # http://localhost:3000
-pnpm test    # uji aturan pendeteksi
-pnpm build
+pnpm test    # 16 uji unit: aturan pendeteksi, peta, tata letak meja
+pnpm lint
+pnpm build && pnpm start   # versi produksi di http://localhost:3000
 ```
 
 | Variabel | Wajib | Isi |
