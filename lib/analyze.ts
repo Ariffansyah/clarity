@@ -199,7 +199,7 @@ const URL_RE =
 const SHORTENERS = new Set(["bit.ly", "s.id", "tinyurl.com", "cutt.ly", "t.ly", "shorturl.at", "is.gd", "rebrand.ly", "ow.ly", "rb.gy"]);
 const CHEAP_TLDS = new Set(["xyz", "top", "click", "icu", "buzz", "vip", "tk", "ml", "ga", "cf", "gq", "lol", "rest", "cyou", "monster", "sbs", "cfd"]);
 
-// shortcut: hand-picked brand list, grows by adding a line. A real allowlist service would scale further.
+// hand-picked brand list, grows by adding a line. A real allowlist service would scale further.
 const BRANDS: { name: string; keys: string[]; official: string[] }[] = [
   { name: "BCA", keys: ["bca", "klikbca"], official: ["bca.co.id", "klikbca.com"] },
   { name: "BRI", keys: ["bri", "brimo"], official: ["bri.co.id"] },

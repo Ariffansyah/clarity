@@ -54,7 +54,7 @@ export async function askJSON<T>(
   }
 }
 
-// shortcut: per-instance memory, resets on redeploy and isn't shared between instances. Use a KV store if the key gets abused.
+// per-instance memory, resets on redeploy and isn't shared between instances. Use a KV store if the key gets abused.
 const hits = new Map<string, { n: number; reset: number }>();
 export function rateLimited(req: Request, max = 20, windowMs = 60_000) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "lokal";
