@@ -8,12 +8,12 @@ tahu langkah yang harus diambil kalau sudah terlanjur, lalu meneruskan peringata
 
 | | |
 | --- | --- |
-| **Live deployment** | _(isi tautan deployment)_ |
-| **Video demo** (maks. 5 menit) | _(isi tautan video)_ |
+| **Live deployment** | [https://clarity.arpthef.my.id/](https://clarity.arpthef.my.id/) |
+| **Video demo** (maks. 5 menit) | [https://youtu.be/2LXWugoGrGk](https://youtu.be/2LXWugoGrGk) |
 | **Repositori** | [github.com/Ariffansyah/clarity](https://github.com/Ariffansyah/clarity) |
 | **Dokumentasi teknis** | [docs/TEKNIS.md](docs/TEKNIS.md) |
 
-**Tim:** _(isi nama tim)_
+**Tim:** Linus Wannabe
 
 | Nama | Peran |
 | --- | --- |
